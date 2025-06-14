@@ -86,9 +86,10 @@ class TarkovGraphQLClient:
         try:
             gql_query = gql(query)
             result = await self._client.execute_async(gql_query, variable_values=variables)
+            logger.debug(f"GraphQL query executed successfully. Variables: {variables}")
             return result
         except Exception as e:
-            logger.error(f"GraphQL query failed: {e}")
+            logger.error(f"GraphQL query failed: {e}. Query variables: {variables}")
             raise
     
     async def search_items(self, name: Optional[str] = None, item_type: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:

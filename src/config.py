@@ -1,6 +1,7 @@
 """Configuration settings for the Tarkov MCP server."""
 
 import os
+import logging
 from typing import Optional
 
 class Config:
@@ -20,6 +21,9 @@ class Config:
     # User agent
     USER_AGENT: str = "TarkovMCPServer/0.1.0"
     
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    
     @classmethod
     def from_env(cls) -> "Config":
         """Create config from environment variables."""
@@ -34,6 +38,9 @@ class Config:
             
         if timeout := os.getenv("REQUEST_TIMEOUT"):
             config.REQUEST_TIMEOUT = int(timeout)
+            
+        if log_level := os.getenv("LOG_LEVEL"):
+            config.LOG_LEVEL = log_level.upper()
             
         return config
 

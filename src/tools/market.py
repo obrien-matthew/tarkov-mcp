@@ -130,7 +130,7 @@ class MarketTools:
             return [TextContent(type="text", text=result_text)]
             
         except Exception as e:
-            logger.error(f"Error getting flea market data: {e}")
+            logger.error(f"Error getting flea market data: {e}", exc_info=True)
             return [TextContent(
                 type="text",
                 text=f"Error getting flea market data: {str(e)}"

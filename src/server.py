@@ -11,14 +11,18 @@ from mcp.types import (
 import mcp.server.stdio
 import mcp.types as types
 
-from tools.items import ItemTools
-from tools.market import MarketTools
-from tools.maps import MapTools
-from tools.traders import TraderTools
-from tools.quests import QuestTools
+from src.tools.items import ItemTools
+from src.tools.market import MarketTools
+from src.tools.maps import MapTools
+from src.tools.traders import TraderTools
+from src.tools.quests import QuestTools
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from src.config import config
+logging.basicConfig(
+    level=getattr(logging, config.LOG_LEVEL, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger("tarkov-mcp-server")
 
 class TarkovMCPServer:

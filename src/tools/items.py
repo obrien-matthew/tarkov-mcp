@@ -121,7 +121,7 @@ class ItemTools:
             return [TextContent(type="text", text=result_text)]
             
         except Exception as e:
-            logger.error(f"Error searching items: {e}")
+            logger.error(f"Error searching items: {e}", exc_info=True)
             return [TextContent(
                 type="text",
                 text=f"Error searching items: {str(e)}"
@@ -206,7 +206,7 @@ class ItemTools:
             return [TextContent(type="text", text=result_text)]
             
         except Exception as e:
-            logger.error(f"Error getting item details: {e}")
+            logger.error(f"Error getting item details: {e}", exc_info=True)
             return [TextContent(
                 type="text",
                 text=f"Error getting item details: {str(e)}"
