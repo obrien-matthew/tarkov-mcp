@@ -165,15 +165,72 @@ class ItemTools:
             # Basic properties
             result_text += "## Properties\n"
             result_text += f"• **ID:** {item.id}\n"
+            if item.normalized_name:
+                result_text += f"• **Normalized Name:** {item.normalized_name}\n"
             result_text += f"• **Weight:** {item.weight or 'N/A'} kg\n"
-            # Note: width/height not in schema, using raw data for now
-            width = item_data.get('width', 'N/A')
-            height = item_data.get('height', 'N/A')
-            result_text += f"• **Size:** {width}x{height} slots\n"
-            result_text += f"• **Base Price:** ₽{item.base_price or 0:,}\n"
             
+            # Dimensions
+            if item.width and item.height:
+                result_text += f"• **Size:** {item.width}x{item.height} slots\n"
+            if item.grid_width and item.grid_height:
+                result_text += f"• **Grid Size:** {item.grid_width}x{item.grid_height}\n"
+            
+            # Pricing
+            result_text += f"• **Base Price:** ₽{item.base_price or 0:,}\n"
+            if item.fleamarket_fee:
+                result_text += f"• **Flea Market Fee:** ₽{item.fleamarket_fee:,}\n"
+            
+            # Categories and types
+            if item.category:
+                result_text += f"• **Category:** {item.category}\n"
             if item.types:
                 result_text += f"• **Types:** {', '.join(item.types)}\n"
+            
+            # Modifiers
+            if item.accuracy_modifier is not None:
+                result_text += f"• **Accuracy Modifier:** {item.accuracy_modifier:+.1%}\n"
+            if item.recoil_modifier is not None:
+                result_text += f"• **Recoil Modifier:** {item.recoil_modifier:+.1%}\n"
+            if item.ergonomics_modifier is not None:
+                result_text += f"• **Ergonomics Modifier:** {item.ergonomics_modifier:+d}\n"
+            
+            # Special properties
+            if item.has_grid:
+                result_text += f"• **Has Internal Grid:** Yes\n"
+            if item.blocks_headphones:
+                result_text += f"• **Blocks Headphones:** Yes\n"
+            
+            # Item properties
+            if item.properties:
+                result_text += "\n## Item Properties\n"
+                props = item.properties
+                if isinstance(props, dict):
+                    if props.get('caliber'):
+                        result_text += f"• **Caliber:** {props['caliber']}\n"
+                    if props.get('class'):
+                        result_text += f"• **Armor Class:** {props['class']}\n"
+                    if props.get('durability'):
+                        result_text += f"• **Durability:** {props['durability']}\n"
+                    if props.get('ergonomics'):
+                        result_text += f"• **Ergonomics:** {props['ergonomics']}\n"
+                    if props.get('fireRate'):
+                        result_text += f"• **Fire Rate:** {props['fireRate']} RPM\n"
+                    if props.get('effectiveDistance'):
+                        result_text += f"• **Effective Distance:** {props['effectiveDistance']}m\n"
+                    if props.get('capacity'):
+                        result_text += f"• **Capacity:** {props['capacity']}\n"
+                    if props.get('energy'):
+                        result_text += f"• **Energy:** {props['energy']:+d}\n"
+                    if props.get('hydration'):
+                        result_text += f"• **Hydration:** {props['hydration']:+d}\n"
+                    if props.get('uses'):
+                        result_text += f"• **Uses:** {props['uses']}\n"
+                    if props.get('material') and isinstance(props['material'], dict):
+                        material = props['material']
+                        if material.get('name'):
+                            result_text += f"• **Material:** {material['name']}\n"
+                        if material.get('destructibility'):
+                            result_text += f"• **Destructibility:** {material['destructibility']:.2f}\n"
             
             # Price information
             if item.avg24h_price:
@@ -188,32 +245,50 @@ class ItemTools:
                     change_percent = item.change_last48h_percent or 0
                     result_text += f"• **48h Change:** ₽{item.change_last48h:,} ({change_percent:+.1f}%)\n"
             
-            # Sell prices
-            if item_data.get("sellFor"):
-                result_text += f"\n## Sell Prices\n"
-                for sell_option in item_data["sellFor"]:
-                    source = sell_option.get("source", "Unknown")
-                    price = sell_option.get("priceRUB", 0)
-                    result_text += f"• **{source}:** ₽{price:,}\n"
+            # Trading information
+            if item.sell_for:
+                result_text += "\n## Sell Prices\n"
+                for price in item.sell_for[:5]:  # Limit to top 5
+                    vendor_name = price.get('vendor', {}).get('name', 'Unknown')
+                    price_val = price.get('priceRUB', price.get('price', 0))
+                    currency = price.get('currency', 'RUB')
+                    result_text += f"• **{vendor_name}:** ₽{price_val:,} {currency}\n"
             
-            # Buy prices
-            if item_data.get("buyFor"):
-                result_text += f"\n## Buy Prices\n"
-                for buy_option in item_data["buyFor"]:
-                    source = buy_option.get("source", "Unknown")
-                    price = buy_option.get("priceRUB", 0)
-                    result_text += f"• **{source}:** ₽{price:,}\n"
+            if item.buy_for:
+                result_text += "\n## Buy Prices\n"
+                for price in item.buy_for[:5]:  # Limit to top 5
+                    vendor_name = price.get('vendor', {}).get('name', 'Unknown')
+                    price_val = price.get('priceRUB', price.get('price', 0))
+                    currency = price.get('currency', 'RUB')
+                    result_text += f"• **{vendor_name}:** ₽{price_val:,} {currency}\n"
             
             # Quest usage
-            if item_data.get("usedInTasks"):
+            if item.used_in_tasks:
                 result_text += f"\n## Used in Quests\n"
-                for task in item_data["usedInTasks"]:
+                for task in item.used_in_tasks[:5]:  # Limit to 5
                     trader = task.get("trader", {}).get("name", "Unknown")
                     result_text += f"• **{task['name']}** (from {trader})\n"
+            
+            # Barter and craft usage
+            if item.barters_for:
+                result_text += f"\n## Available in Barters ({len(item.barters_for)})\n"
+                for barter in item.barters_for[:3]:  # Show first 3
+                    trader = barter.get("trader", {}).get("name", "Unknown")
+                    level = barter.get("level", "?")
+                    result_text += f"• {trader} Level {level}\n"
+            
+            if item.crafts_for:
+                result_text += f"\n## Available in Crafts ({len(item.crafts_for)})\n"
+                for craft in item.crafts_for[:3]:  # Show first 3
+                    station = craft.get("station", {}).get("name", "Unknown")
+                    level = craft.get("level", "?")
+                    result_text += f"• {station} Level {level}\n"
             
             # Links
             if item.wiki_link:
                 result_text += f"\n**Wiki:** {item.wiki_link}\n"
+            if item.link:
+                result_text += f"**Tarkov.dev:** {item.link}\n"
             
             return [TextContent(type="text", text=result_text)]
             
@@ -300,8 +375,8 @@ class ItemTools:
                     result_text += f"| {item.id} | Error: {item.error} | - | - |\n"
                 else:
                     weight = item.weight or 0
-                    width = getattr(item, '_raw_data', {}).get('width', 0)
-                    height = getattr(item, '_raw_data', {}).get('height', 0)
+                    width = item.width or 0
+                    height = item.height or 0
                     base_price = item.base_price or 0
                     
                     result_text += f"| {item.name} | {weight}kg | {width}x{height} | ₽{base_price:,} |\n"

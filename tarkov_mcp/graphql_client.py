@@ -100,27 +100,130 @@ class TarkovGraphQLClient:
                 id
                 name
                 shortName
+                normalizedName
                 description
                 basePrice
                 weight
                 width
                 height
+                gridWidth
+                gridHeight
                 iconLink
                 wikiLink
+                imageLink
+                gridImageLink
+                baseImageLink
+                backgroundColor
                 types
+                category
                 updated
                 avg24hPrice
+                low24hPrice
+                high24hPrice
+                lastLowPrice
+                changeLast48h
+                changeLast48hPercent
+                fleaMarketFee
+                accuracyModifier
+                recoilModifier
+                ergonomicsModifier
+                hasGrid
+                blocksHeadphones
+                link
+                properties {
+                    ... on WeaponProperties {
+                        caliber
+                        effectiveDistance
+                        ergonomics
+                        fireModes
+                        fireRate
+                        maxDurability
+                        recoilVertical
+                        recoilHorizontal
+                        centerOfImpact
+                        cameraRecoil
+                        cameraSnap
+                        convergence
+                    }
+                    ... on ArmorProperties {
+                        class
+                        durability
+                        material {
+                            id
+                            name
+                            destructibility
+                        }
+                        bluntThroughput
+                        zones
+                        armorType
+                        ergonomicsPenalty
+                        speedPenalty
+                        turnPenalty
+                    }
+                    ... on HelmetProperties {
+                        class
+                        durability
+                        material {
+                            id
+                            name
+                            destructibility
+                        }
+                        bluntThroughput
+                        zones
+                        ergonomicsPenalty
+                        speedPenalty
+                        turnPenalty
+                        deafening
+                        blocksHeadset
+                    }
+                    ... on ContainerProperties {
+                        capacity
+                    }
+                    ... on FoodDrinkProperties {
+                        energy
+                        hydration
+                    }
+                    ... on GrenadeProperties {
+                        type
+                        fuse
+                        minExplosionDistance
+                        maxExplosionDistance
+                        fragments
+                        contusionRadius
+                    }
+                    ... on KeyProperties {
+                        uses
+                    }
+                    ... on MedicalProperties {
+                        uses
+                        useTime
+                        cures
+                    }
+                    ... on StimulantsProperties {
+                        uses
+                        useTime
+                        cures
+                    }
+                }
                 sellFor {
-                    source
+                    vendor {
+                        name
+                        normalizedName
+                    }
                     price
                     currency
                     priceRUB
+                    updated
                 }
                 buyFor {
-                    source
+                    vendor {
+                        name
+                        normalizedName
+                    }
                     price
                     currency
                     priceRUB
+                    updated
                 }
             }
         }
@@ -143,14 +246,22 @@ class TarkovGraphQLClient:
                 id
                 name
                 shortName
+                normalizedName
                 description
                 basePrice
                 weight
                 width
                 height
+                gridWidth
+                gridHeight
                 iconLink
                 wikiLink
+                imageLink
+                gridImageLink
+                baseImageLink
+                backgroundColor
                 types
+                category
                 updated
                 avg24hPrice
                 low24hPrice
@@ -158,32 +269,128 @@ class TarkovGraphQLClient:
                 lastLowPrice
                 changeLast48h
                 changeLast48hPercent
+                fleaMarketFee
+                accuracyModifier
+                recoilModifier
+                ergonomicsModifier
+                hasGrid
+                blocksHeadphones
+                link
+                properties {
+                    ... on WeaponProperties {
+                        caliber
+                        effectiveDistance
+                        ergonomics
+                        fireModes
+                        fireRate
+                        maxDurability
+                        recoilVertical
+                        recoilHorizontal
+                        centerOfImpact
+                        cameraRecoil
+                        cameraSnap
+                        convergence
+                        slots {
+                            id
+                            name
+                            nameId
+                            required
+                        }
+                    }
+                    ... on ArmorProperties {
+                        class
+                        durability
+                        material {
+                            id
+                            name
+                            destructibility
+                            minRepairDegradation
+                            maxRepairDegradation
+                            explosionDestructibility
+                            minRepairKitDegradation
+                            maxRepairKitDegradation
+                        }
+                        bluntThroughput
+                        zones
+                        armorType
+                        ergonomicsPenalty
+                        speedPenalty
+                        turnPenalty
+                    }
+                    ... on HelmetProperties {
+                        class
+                        durability
+                        material {
+                            id
+                            name
+                            destructibility
+                        }
+                        bluntThroughput
+                        zones
+                        ergonomicsPenalty
+                        speedPenalty
+                        turnPenalty
+                        deafening
+                        blocksHeadset
+                        slots {
+                            id
+                            name
+                            nameId
+                            required
+                        }
+                    }
+                    ... on ContainerProperties {
+                        capacity
+                        grids {
+                            width
+                            height
+                        }
+                    }
+                    ... on FoodDrinkProperties {
+                        energy
+                        hydration
+                    }
+                    ... on GrenadeProperties {
+                        type
+                        fuse
+                        minExplosionDistance
+                        maxExplosionDistance
+                        fragments
+                        contusionRadius
+                    }
+                    ... on KeyProperties {
+                        uses
+                    }
+                    ... on MedicalProperties {
+                        uses
+                        useTime
+                        cures
+                    }
+                    ... on StimulantsProperties {
+                        uses
+                        useTime
+                        cures
+                    }
+                }
                 sellFor {
-                    source
+                    vendor {
+                        name
+                        normalizedName
+                    }
                     price
                     currency
                     priceRUB
-                    requirements {
-                        type
-                        value
-                    }
+                    updated
                 }
                 buyFor {
-                    source
+                    vendor {
+                        name
+                        normalizedName
+                    }
                     price
                     currency
                     priceRUB
-                    requirements {
-                        type
-                        value
-                    }
-                }
-                containsItems {
-                    item {
-                        id
-                        name
-                    }
-                    count
+                    updated
                 }
                 usedInTasks {
                     id
@@ -191,6 +398,41 @@ class TarkovGraphQLClient:
                     trader {
                         name
                     }
+                }
+                receivedFromTasks {
+                    id
+                    name
+                    trader {
+                        name
+                    }
+                }
+                bartersFor {
+                    id
+                    trader {
+                        name
+                    }
+                    level
+                }
+                bartersUsing {
+                    id
+                    trader {
+                        name
+                    }
+                    level
+                }
+                craftsFor {
+                    id
+                    station {
+                        name
+                    }
+                    level
+                }
+                craftsUsing {
+                    id
+                    station {
+                        name
+                    }
+                    level
                 }
             }
         }
@@ -234,30 +476,52 @@ class TarkovGraphQLClient:
             barters(limit: $limit) {
                 id
                 trader {
+                    id
                     name
+                    normalizedName
                     resetTime
                 }
                 level
                 buyLimit
+                buyLimitResetTime
                 requiredItems {
                     item {
                         id
                         name
+                        shortName
+                        iconLink
+                        basePrice
                         avg24hPrice
                     }
                     count
+                    quantity
+                    attributes {
+                        name
+                        value
+                    }
                 }
                 rewardItems {
                     item {
                         id
                         name
+                        shortName
+                        iconLink
+                        basePrice
                         avg24hPrice
                     }
                     count
+                    quantity
+                    attributes {
+                        name
+                        value
+                    }
                 }
                 taskUnlock {
                     id
                     name
+                    trader {
+                        name
+                    }
                 }
             }
         }
@@ -624,49 +888,80 @@ class TarkovGraphQLClient:
         return result.get("ammo", [])
     
     async def get_hideout_modules(self) -> List[Dict[str, Any]]:
-        """Get hideout modules and their requirements."""
+        """Get hideout modules/stations."""
         query = """
-        query GetHideoutModules {
-            hideoutModules {
+        query GetHideoutStations {
+            hideoutStations {
                 id
                 name
-                level
-                require {
-                    item {
-                        id
-                        name
-                    }
-                    count
-                    module {
-                        name
-                    }
+                normalizedName
+                imageLink
+                tarkovDataId
+                levels {
                     level
-                    skill {
-                        name
-                    }
-                    trader {
-                        name
-                    }
-                }
-                bonuses {
-                    type
-                    value
-                }
-                crafts {
-                    duration
-                    requiredItems {
+                    constructionTime
+                    description
+                    itemRequirements {
                         item {
                             id
                             name
+                            shortName
+                            iconLink
                         }
                         count
+                        quantity
+                        attributes {
+                            name
+                            value
+                        }
                     }
-                    rewardItems {
-                        item {
+                    stationLevelRequirements {
+                        station {
                             id
                             name
+                            normalizedName
                         }
-                        count
+                        level
+                    }
+                    skillRequirements {
+                        name
+                        level
+                    }
+                    traderRequirements {
+                        trader {
+                            id
+                            name
+                            normalizedName
+                        }
+                        level
+                    }
+                    crafts {
+                        id
+                        duration
+                        requiredItems {
+                            item {
+                                id
+                                name
+                                shortName
+                            }
+                            count
+                        }
+                        rewardItems {
+                            item {
+                                id
+                                name
+                                shortName
+                            }
+                            count
+                        }
+                    }
+                    bonuses {
+                        name
+                        value
+                        type
+                        passive
+                        production
+                        visible
                     }
                 }
             }
@@ -674,4 +969,58 @@ class TarkovGraphQLClient:
         """
         
         result = await self.execute_query(query)
-        return result.get("hideoutModules", [])
+        return result.get("hideoutStations", [])
+
+    async def get_crafts(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get all crafting recipes."""
+        query = """
+        query GetCrafts($limit: Int) {
+            crafts(limit: $limit) {
+                id
+                station {
+                    id
+                    name
+                    normalizedName
+                }
+                level
+                duration
+                unlockLevel
+                requiredItems {
+                    item {
+                        id
+                        name
+                        shortName
+                        iconLink
+                        basePrice
+                        avg24hPrice
+                    }
+                    count
+                    quantity
+                    attributes {
+                        name
+                        value
+                    }
+                }
+                rewardItems {
+                    item {
+                        id
+                        name
+                        shortName
+                        iconLink
+                        basePrice
+                        avg24hPrice
+                    }
+                    count
+                    quantity
+                    attributes {
+                        name
+                        value
+                    }
+                }
+            }
+        }
+        """
+        
+        variables = {"limit": limit}
+        result = await self.execute_query(query, variables)
+        return result.get("crafts", [])

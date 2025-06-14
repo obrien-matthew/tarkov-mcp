@@ -87,6 +87,26 @@ class MarketTools:
                     "type": "object",
                     "properties": {}
                 }
+            ),
+            Tool(
+                name="get_crafts",
+                description="Get crafting recipes from hideout stations with cost analysis",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of crafts to return",
+                            "default": 50,
+                            "minimum": 1,
+                            "maximum": 200
+                        },
+                        "station": {
+                            "type": "string",
+                            "description": "Filter by station name (partial match)"
+                        }
+                    }
+                }
             )
         ]
     

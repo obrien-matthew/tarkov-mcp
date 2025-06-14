@@ -81,6 +81,8 @@ class TarkovMCPServer:
                     return await self.market_tools.handle_get_ammo_data(arguments)
                 elif name == "get_hideout_modules":
                     return await self.market_tools.handle_get_hideout_modules(arguments)
+                elif name == "get_crafts":
+                    return await self.market_tools.handle_get_crafts(arguments)
                 elif name == "get_maps":
                     return await self.map_tools.handle_get_maps(arguments)
                 elif name == "get_map_details":
