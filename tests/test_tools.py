@@ -1,12 +1,14 @@
 """Tests for MCP tools."""
-
-import pytest
-from unittest.mock import AsyncMock, patch
-from mcp.types import TextContent
-
-from src.tools.items import ItemTools
-from src.tools.market import MarketTools
-
+                                                                                                                                                              
+import pytest                                                                                                                                                 
+from unittest.mock import AsyncMock, patch                                                                                                                    
+from mcp.types import TextContent                                                                                                                             
+                                                                                                                                                              
+from src.tools.items import ItemTools                                                                                                                         
+from src.tools.market import MarketTools                                                                                                                      
+                                                                                                                                                              
+# Set timeout for all async tests to prevent hanging                                                                                                          
+pytestmark = pytest.mark.timeout(30)     
 class TestItemTools:
     """Test item tools functionality."""
     

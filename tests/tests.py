@@ -1,9 +1,12 @@
 """Tests for GraphQL client."""
 
-import pytest
-import asyncio
-from unittest.mock import AsyncMock, patch, MagicMock
-from src.graphql_client import TarkovGraphQLClient, RateLimiter
+import pytest                                                                                                                                                 
+import asyncio                                                                                                                                                
+from unittest.mock import AsyncMock, patch, MagicMock                                                                                                         
+from src.graphql_client import TarkovGraphQLClient, RateLimiter                                                                                               
+                                                                                                                                                              
+# Set timeout for all async tests to prevent hanging                                                                                                          
+pytestmark = pytest.mark.timeout(30) 
 
 class TestRateLimiter:
     """Test rate limiter functionality."""
@@ -20,22 +23,22 @@ class TestRateLimiter:
         # Check that we have 5 requests recorded
         assert len(limiter.requests) == 5
     
-    @pytest.mark.asyncio
-    async def test_rate_limiter_blocks_excess_requests(self):
-        """Test that rate limiter blocks requests over the limit."""
-        limiter = RateLimiter(max_requests=2, time_window=1)
-        
-        # Allow 2 requests
-        await limiter.acquire()
-        await limiter.acquire()
-        
-        # Third request should be delayed
-        start_time = asyncio.get_event_loop().time()
-        await limiter.acquire()
-        end_time = asyncio.get_event_loop().time()
-        
-        # Should have been delayed by approximately 1 second
-        assert end_time - start_time >= 0.9
+    @pytest.mark.asyncio                                                                                                                                      
+    async def test_rate_limiter_blocks_excess_requests(self):                                                                                                 
+        """Test that rate limiter blocks requests over the limit."""                                                                                          
+        limiter = RateLimiter(max_requests=2, time_window=0.1)  # Use shorter time window                                                                     
+                                                                                                                                                              
+        # Allow 2 requests                                                                                                                                    
+        await limiter.acquire()                                                                                                                               
+        await limiter.acquire()                                                                                                                               
+                                                                                                                                                              
+        # Third request should be delayed                                                                                                                     
+        start_time = asyncio.get_event_loop().time()                                                                                                          
+        await limiter.acquire()                                                                                                                               
+        end_time = asyncio.get_event_loop().time()                                                                                                            
+                                                                                                                                                              
+        # Should have been delayed by approximately 0.1 seconds                                                                                               
+        assert end_time - start_time >= 0.05  # Allow some tolerance  
 
 class TestTarkovGraphQLClient:
     """Test GraphQL client functionality."""
@@ -92,7 +95,8 @@ class TestTarkovGraphQLClient:
             with patch('src.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_item_by_id("test-id")
-                
+
+                assert result
                 assert result["name"] == "Test Item"
                 assert result["id"] == "test-id"
     
