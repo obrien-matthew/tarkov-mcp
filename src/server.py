@@ -11,8 +11,8 @@ from mcp.types import (
 import mcp.server.stdio
 import mcp.types as types
 
-from .tools.items import ItemTools
-from .tools.market import MarketTools
+from tools.items import ItemTools
+from tools.market import MarketTools
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
