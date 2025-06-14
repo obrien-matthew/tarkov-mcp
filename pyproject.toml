@@ -7,10 +7,8 @@ name = "tarkov-mcp-server"
 version = "0.1.0"
 description = "Model Context Protocol server for Escape from Tarkov data"
 readme = "README.md"
-license = {text = "GPL-3.0"}
-authors = [
-    {name = "Tarkov MCP Server"},
-]
+license = { text = "GPL-3.0" }
+authors = [{ name = "Tarkov MCP Server" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -25,12 +23,7 @@ classifiers = [
 ]
 keywords = ["tarkov", "mcp", "model-context-protocol", "gaming", "api"]
 requires-python = ">=3.8"
-dependencies = [
-    "mcp>=1.0.0",
-    "gql>=3.4.1",
-    "aiohttp>=3.8.0",
-    "pydantic>=2.0.0",
-]
+dependencies = ["mcp>=1.0.0", "gql>=3.4.1", "aiohttp>=3.8.0", "pydantic>=2.0.0"]
 
 [project.optional-dependencies]
 dev = [
@@ -131,70 +124,11 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
 ]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/**/*" = ["B011"][build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "tarkov-mcp-server"
-version = "0.1.0"
-authors = [
-    {name = "Tarkov MCP Server"}
-]
-description = "Model Context Protocol server for Escape from Tarkov data"
-readme = "README.md"
-requires-python = ">=3.8"
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-]
-keywords = ["tarkov", "mcp", "model-context-protocol", "gaming", "api"]
-dependencies = [
-    "mcp>=1.0.0",
-    "gql>=3.4.1",
-    "aiohttp>=3.8.0",
-    "pydantic>=2.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-mock>=3.10.0",
-    "pytest-timeout>=2.1.0",
-    "black>=22.0.0",
-    "isort>=5.10.0",
-    "mypy>=0.950",
-]
-test = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-mock>=3.10.0",
-    "pytest-timeout>=2.1.0",
-]
-
-[project.scripts]
-tarkov-mcp-server = "src.server:main"
-
-[project.urls]
-"Bug Reports" = "https://github.com/yourusername/tarkov-mcp-server/issues"
-"Source" = "https://github.com/yourusername/tarkov-mcp-server"
-"Documentation" = "https://github.com/yourusername/tarkov-mcp-server#readme"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+"tests/**/*" = ["B011"]
