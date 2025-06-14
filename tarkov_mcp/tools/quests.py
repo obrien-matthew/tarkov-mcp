@@ -5,7 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
-from tarkov_mcp.schema import Task, parse_task_from_api
+from tarkov_mcp.schema import parse_task_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -203,8 +203,8 @@ class QuestTools:
                 result_text += "\n"
             
             # Rewards
-            if quest.get("finishRewards"):
-                rewards = quest["finishRewards"]
+            if quest.finish_rewards:
+                rewards = quest.finish_rewards
                 result_text += f"## Rewards\n"
                 
                 # Items
@@ -242,8 +242,8 @@ class QuestTools:
                 result_text += "\n"
             
             # Wiki link
-            if quest.get("wikiLink"):
-                result_text += f"**Wiki:** {quest['wikiLink']}\n"
+            if quest.wiki_link:
+                result_text += f"**Wiki:** {quest.wiki_link:}\n"
             
             return [TextContent(type="text", text=result_text)]
             

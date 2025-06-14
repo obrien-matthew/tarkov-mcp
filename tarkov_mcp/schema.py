@@ -49,7 +49,26 @@ class Achievement:
 @dataclass
 class Item:
     """Base item type - would be defined elsewhere in full schema."""
-    pass  # Placeholder - full Item definition would be extensive
+    id: str
+    name: str
+    short_name: Optional[str] = None
+    description: Optional[str] = None
+    weight: Optional[float] = None
+    base_price: Optional[int] = None
+    avg24h_price: Optional[int] = None
+    low24h_price: Optional[int] = None
+    high24h_price: Optional[int] = None
+    last_low_price: Optional[int] = None
+    change_last48h: Optional[float] = None
+    change_last48h_percent: Optional[float] = None
+    updated: Optional[str] = None
+    icon_link: Optional[str] = None
+    wiki_link: Optional[str] = None
+    image_link: Optional[str] = None
+    grid_image_link: Optional[str] = None
+    base_image_link: Optional[str] = None
+    types: Optional[List[str]] = None
+    category: Optional[str] = None
 
 
 @dataclass
@@ -110,19 +129,41 @@ class AttributeThreshold:
 @dataclass
 class Trader:
     """NPC trader information."""
-    pass  # Would be defined elsewhere in full schema
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    description: Optional[str] = None
+    wiki_link: Optional[str] = None
+    image_link: Optional[str] = None
+    levels: Optional[List[dict]] = None
+    currency: Optional[dict] = None
+    reset_time: Optional[str] = None
 
 
 @dataclass
 class Task:
     """Quest/task information."""
-    pass  # Would be defined elsewhere in full schema
+    id: str
+    name: str
+    trader: Optional[Trader] = None
+    map: Optional[str] = None
+    experience: Optional[int] = None
+    wiki_link: Optional[str] = None
+    min_player_level: Optional[int] = None
+    objectives: Optional[List[dict]] = None
+    start_rewards: Optional[dict] = None
+    finish_rewards: Optional[dict] = None
+    fail_conditions: Optional[List[dict]] = None
+    task_requirements: Optional[List[dict]] = None
 
 
 @dataclass
 class ContainedItem:
     """Item with quantity information."""
-    pass  # Would contain item reference and count
+    item: Item
+    count: int
+    quantity: Optional[int] = None
+    attributes: Optional[List[dict]] = None
 
 
 @dataclass
@@ -150,19 +191,32 @@ class Barter:
 @dataclass
 class MobInfo:
     """Information about AI enemies/bosses."""
-    pass  # Would contain boss details
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    health: Optional[List[dict]] = None
+    equipment: Optional[List[dict]] = None
+    items: Optional[List[Item]] = None
+    image_portrait_link: Optional[str] = None
+    image_poster_link: Optional[str] = None
 
 
 @dataclass
 class MapSwitch:
     """Map switch/lever information."""
-    pass
+    id: str
+    name: str
+    map: str
+    position: Optional[dict] = None
+    operation: Optional[str] = None
 
 
 @dataclass
 class BossSpawnLocation:
     """Location where boss can spawn."""
-    pass
+    name: str
+    chance: Optional[float] = None
+    position: Optional[dict] = None
 
 
 @dataclass
@@ -190,6 +244,21 @@ class BossSpawn:
     normalized_name: str  # Use boss.normalized_name instead
 
 
+@dataclass
+class Map:
+    """Game map information."""
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    wiki: Optional[str] = None
+    description: Optional[str] = None
+    enemies: Optional[List[str]] = None
+    raidDuration: Optional[int] = None
+    players: Optional[str] = None
+    bosses: Optional[List[BossSpawn]] = None
+    nameId: Optional[str] = None
+
+
 # Deprecated types - kept for backwards compatibility
 
 @dataclass
@@ -201,6 +270,16 @@ class HideoutModule:
     level: Optional[int]
     item_requirements: List[ContainedItem]
     module_requirements: List['HideoutModule']
+
+
+@dataclass
+class HideoutStation:
+    """Hideout station/module information."""
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    image_link: Optional[str] = None
+    levels: Optional[List[dict]] = None
 
 
 @dataclass
@@ -266,6 +345,26 @@ class TraderResetTime:
     reset_timestamp: Optional[str]  # Use Trader.reset_time instead
 
 
+@dataclass
+class ItemPrice:
+    """Current item pricing information."""
+    vendor: Trader
+    price: int
+    currency: str
+    price_rub: int
+    updated: Optional[str] = None
+
+
+@dataclass
+class FleaMarket:
+    """Flea market listing information."""
+    item: Item
+    price: int
+    currency: str
+    price_rub: int
+    updated: Optional[str] = None
+
+
 # Helper functions for MCP server development
 
 def normalize_side(side: str) -> str:
@@ -285,3 +384,81 @@ def is_deprecated_field(field_name: str) -> bool:
         'name', 'normalizedName', 'description'
     }
     return field_name in deprecated_fields
+
+
+def parse_item_from_api(data: dict) -> Item:
+    """Parse Item from API response data."""
+    return Item(
+        id=data.get('id', ''),
+        name=data.get('name', ''),
+        short_name=data.get('shortName'),
+        description=data.get('description'),
+        weight=data.get('weight'),
+        base_price=data.get('basePrice'),
+        avg24h_price=data.get('avg24hPrice'),
+        low24h_price=data.get('low24hPrice'),
+        high24h_price=data.get('high24hPrice'),
+        last_low_price=data.get('lastLowPrice'),
+        change_last48h=data.get('changeLast48h'),
+        change_last48h_percent=data.get('changeLast48hPercent'),
+        updated=data.get('updated'),
+        icon_link=data.get('iconLink'),
+        wiki_link=data.get('wikiLink'),
+        image_link=data.get('imageLink'),
+        grid_image_link=data.get('gridImageLink'),
+        base_image_link=data.get('baseImageLink'),
+        types=data.get('types', []),
+        category=data.get('category')
+    )
+
+
+def parse_trader_from_api(data: dict) -> Trader:
+    """Parse Trader from API response data."""
+    return Trader(
+        id=data.get('id', ''),
+        name=data.get('name', ''),
+        normalized_name=data.get('normalizedName'),
+        description=data.get('description'),
+        wiki_link=data.get('wikiLink'),
+        image_link=data.get('imageLink'),
+        levels=data.get('levels', []),
+        currency=data.get('currency'),
+        reset_time=data.get('resetTime')
+    )
+
+
+def parse_task_from_api(data: dict) -> Task:
+    """Parse Task from API response data."""
+    trader_data = data.get('trader', {})
+    trader = parse_trader_from_api(trader_data) if trader_data else None
+    
+    return Task(
+        id=data.get('id', ''),
+        name=data.get('name', ''),
+        trader=trader,
+        map=data.get('map'),
+        experience=data.get('experience'),
+        wiki_link=data.get('wikiLink'),
+        min_player_level=data.get('minPlayerLevel'),
+        objectives=data.get('objectives', []),
+        start_rewards=data.get('startRewards'),
+        finish_rewards=data.get('finishRewards'),
+        fail_conditions=data.get('failConditions', []),
+        task_requirements=data.get('taskRequirements', [])
+    )
+
+
+def parse_map_from_api(data: dict) -> Map:
+    """Parse Map from API response data."""
+    return Map(
+        id=data.get('id', ''),
+        name=data.get('name', ''),
+        normalized_name=data.get('normalizedName'),
+        wiki=data.get('wiki'),
+        description=data.get('description'),
+        enemies=data.get('enemies', []),
+        raidDuration=data.get('raidDuration'),
+        players=data.get('players'),
+        bosses=data.get('bosses', []),
+        nameId=data.get('nameId')
+    )

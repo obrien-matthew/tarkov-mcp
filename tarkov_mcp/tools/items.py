@@ -5,7 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
-from tarkov_mcp.schema import Item, parse_item_from_api
+from tarkov_mcp.schema import parse_item_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -243,28 +243,20 @@ class ItemTools:
                     if items_data:
                         item = parse_item_from_api(items_data[0])
                         all_prices.append(item)
-                    else:
-                        # Create a minimal item for error case
-                        error_item = Item(id="", name=item_name)
-                        error_item.error = "Not found"  # Add error attribute
-                        all_prices.append(error_item)
             
             result_text = f"# Item Prices ({len(item_names)} requested)\n\n"
             
             for item in all_prices:
-                if hasattr(item, 'error'):
-                    result_text += f"• **{item.name}**: {item.error}\n"
+                result_text += f"• **{item.name}**\n"
+                if item.avg24h_price and item.avg24h_price > 0:
+                    result_text += f"  - Average: ₽{item.avg24h_price:,}\n"
+                    if item.low24h_price and item.high24h_price:
+                        result_text += f"  - Range: ₽{item.low24h_price:,} - ₽{item.high24h_price:,}\n"
+                    if item.change_last48h_percent and item.change_last48h_percent != 0:
+                        trend = "📈" if item.change_last48h_percent > 0 else "📉"
+                        result_text += f"  - 48h Change: {item.change_last48h_percent:+.1f}% {trend}\n"
                 else:
-                    result_text += f"• **{item.name}**\n"
-                    if item.avg24h_price and item.avg24h_price > 0:
-                        result_text += f"  - Average: ₽{item.avg24h_price:,}\n"
-                        if item.low24h_price and item.high24h_price:
-                            result_text += f"  - Range: ₽{item.low24h_price:,} - ₽{item.high24h_price:,}\n"
-                        if item.change_last48h_percent and item.change_last48h_percent != 0:
-                            trend = "📈" if item.change_last48h_percent > 0 else "📉"
-                            result_text += f"  - 48h Change: {item.change_last48h_percent:+.1f}% {trend}\n"
-                    else:
-                        result_text += f"  - No price data available\n"
+                    result_text += f"  - No price data available\n"
                 
                 result_text += "\n"
             
@@ -294,13 +286,7 @@ class ItemTools:
                     item_data = await client.get_item_by_id(item_id)
                     if item_data:
                         item = parse_item_from_api(item_data)
-                        # Store raw data for fields not in schema
-                        item._raw_data = item_data
                         items.append(item)
-                    else:
-                        error_item = Item(id=item_id, name="")
-                        error_item.error = "Not found"
-                        items.append(error_item)
             
             result_text = f"# Item Comparison ({len(items)} items)\n\n"
             

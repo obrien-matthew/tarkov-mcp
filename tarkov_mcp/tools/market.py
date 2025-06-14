@@ -5,7 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
-from tarkov_mcp.schema import Item, Trader, Barter, Ammo, parse_item_from_api, parse_trader_from_api
+from tarkov_mcp.schema import parse_item_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -204,7 +204,7 @@ class MarketTools:
                 
                 # Calculate profit if we have price data
                 if 'total_cost' in locals() and 'total_value' in locals() and total_cost > 0:
-                    profit = total_value - total_cost
+                    profit = total_value - total_cost # type: ignore
                     profit_percent = (profit / total_cost) * 100
                     profit_indicator = "💰" if profit > 0 else "💸"
                     result_text += f"\n**Estimated Profit:** ₽{profit:,} ({profit_percent:+.1f}%) {profit_indicator}\n"

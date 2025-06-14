@@ -5,7 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
-from tarkov_mcp.schema import Map, parse_map_from_api
+from tarkov_mcp.schema import parse_map_from_api
 
 logger = logging.getLogger(__name__)
 

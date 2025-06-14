@@ -2,6 +2,9 @@
 
 A Model Context Protocol (MCP) server that provides access to Escape from Tarkov game data through the community-maintained Tarkov API.
 
+> [!IMPORTANT]  
+> I am not affiliated with the tarkov.dev project or API. I simply built this MCP server to interact with what they have built. If you appreciate their work, please consider donating to them [here](https://opencollective.com/tarkov-dev)!
+
 ## Features
 
 ### Item Tools
