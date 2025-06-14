@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """Simple rate limiter for API requests."""
     
-    def __init__(self, max_requests: int, time_window: int = 60):
+    def __init__(self, max_requests: int, time_window: float = 60):
         self.max_requests = max_requests
         self.time_window = time_window
         self.requests = []
@@ -63,15 +63,10 @@ class TarkovGraphQLClient:
             "Content-Type": "application/json"
         }
         
-        timeout = aiohttp.ClientTimeout(total=config.REQUEST_TIMEOUT)
-        self._session = aiohttp.ClientSession(
-            headers=headers,
-            timeout=timeout
-        )
-        
         transport = AIOHTTPTransport(
             url=config.TARKOV_API_URL,
-            session=self._session
+            headers=headers,
+            timeout=config.REQUEST_TIMEOUT
         )
         
         self._client = Client(transport=transport, fetch_schema_from_transport=False)
