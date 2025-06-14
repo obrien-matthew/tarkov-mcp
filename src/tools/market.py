@@ -1,8 +1,7 @@
 """Market and trading related MCP tools."""
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from mcp.types import Tool, TextContent
-import json
 import logging
 
 from graphql_client import TarkovGraphQLClient

@@ -41,7 +41,7 @@ class TarkovMCPServer:
             return self.all_tools
         
         @self.server.call_tool()
-        async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+        async def handle_call_tool(name: str, arguments: dict[str, Any]) -> Sequence[types.TextContent | types.ImageContent | types.EmbeddedResource]:
             """Handle tool calls."""
             logger.info(f"Tool called: {name} with arguments: {arguments}")
             
