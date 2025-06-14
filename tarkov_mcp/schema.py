@@ -109,6 +109,8 @@ class Achievement:
     normalized_rarity: Optional[str]  # Lowercase standardized rarity
 
 
+
+
 @dataclass
 class ItemSlot:
     """Item slot configuration."""
