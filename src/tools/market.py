@@ -5,7 +5,7 @@ from mcp.types import Tool, TextContent
 import json
 import logging
 
-from ..graphql_client import TarkovGraphQLClient
+from graphql_client import TarkovGraphQLClient
 
 logger = logging.getLogger(__name__)
 
