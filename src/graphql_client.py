@@ -264,3 +264,413 @@ class TarkovGraphQLClient:
         
         result = await self.execute_query(query, {"limit": limit})
         return result.get("barters", [])
+    
+    async def get_maps(self) -> List[Dict[str, Any]]:
+        """Get all available maps."""
+        query = """
+        query GetMaps {
+            maps {
+                id
+                name
+                description
+                wiki
+                raidDuration
+                players
+                enemies
+                bosses {
+                    name
+                    spawnChance
+                    spawnLocations {
+                        name
+                        chance
+                    }
+                    escorts {
+                        name
+                        amount {
+                            min
+                            max
+                        }
+                    }
+                }
+                extracts {
+                    name
+                    faction
+                    switches {
+                        name
+                    }
+                }
+                loot {
+                    item {
+                        id
+                        name
+                        avg24hPrice
+                    }
+                    spawnChance
+                }
+            }
+        }
+        """
+        
+        result = await self.execute_query(query)
+        return result.get("maps", [])
+    
+    async def get_map_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get detailed map information by name."""
+        query = """
+        query GetMap($name: String!) {
+            maps(name: $name) {
+                id
+                name
+                description
+                wiki
+                raidDuration
+                players
+                enemies
+                bosses {
+                    name
+                    spawnChance
+                    spawnLocations {
+                        name
+                        chance
+                    }
+                    escorts {
+                        name
+                        amount {
+                            min
+                            max
+                        }
+                    }
+                }
+                extracts {
+                    name
+                    faction
+                    switches {
+                        name
+                    }
+                }
+                loot {
+                    item {
+                        id
+                        name
+                        avg24hPrice
+                    }
+                    spawnChance
+                }
+            }
+        }
+        """
+        
+        result = await self.execute_query(query, {"name": name})
+        maps = result.get("maps", [])
+        return maps[0] if maps else None
+    
+    async def get_traders(self) -> List[Dict[str, Any]]:
+        """Get all traders."""
+        query = """
+        query GetTraders {
+            traders {
+                id
+                name
+                description
+                location
+                resetTime
+                currency {
+                    name
+                }
+                levels {
+                    level
+                    requiredPlayerLevel
+                    requiredReputation
+                    requiredCommerce
+                    paywall {
+                        level
+                    }
+                }
+                insurance {
+                    availableOnMap
+                    minReturnHour
+                    maxReturnHour
+                    maxStorageTime
+                }
+                repair {
+                    availability
+                    priceModifier
+                    qualityModifier
+                }
+            }
+        }
+        """
+        
+        result = await self.execute_query(query)
+        return result.get("traders", [])
+    
+    async def get_trader_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get detailed trader information by name."""
+        query = """
+        query GetTrader($name: String!) {
+            traders(name: $name) {
+                id
+                name
+                description
+                location
+                resetTime
+                currency {
+                    name
+                }
+                levels {
+                    level
+                    requiredPlayerLevel
+                    requiredReputation
+                    requiredCommerce
+                    paywall {
+                        level
+                    }
+                }
+                insurance {
+                    availableOnMap
+                    minReturnHour
+                    maxReturnHour
+                    maxStorageTime
+                }
+                repair {
+                    availability
+                    priceModifier
+                    qualityModifier
+                }
+            }
+        }
+        """
+        
+        result = await self.execute_query(query, {"name": name})
+        traders = result.get("traders", [])
+        return traders[0] if traders else None
+    
+    async def get_trader_items(self, trader_name: str, level: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Get items sold by a trader."""
+        query = """
+        query GetTraderItems($trader: String!, $level: Int) {
+            traders(name: $trader) {
+                cashOffers(level: $level) {
+                    item {
+                        id
+                        name
+                        shortName
+                        types
+                        avg24hPrice
+                    }
+                    priceRUB
+                    currency
+                    minTraderLevel
+                    buyLimit
+                    restockAmount
+                    requirements {
+                        type
+                        value
+                        stringValue
+                    }
+                }
+            }
+        }
+        """
+        
+        variables = {"trader": trader_name}
+        if level:
+            variables["level"] = level
+        
+        result = await self.execute_query(query, variables)
+        traders = result.get("traders", [])
+        if traders:
+            return traders[0].get("cashOffers", [])
+        return []
+    
+    async def get_quests(self, trader: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get all quests, optionally filtered by trader."""
+        query = """
+        query GetQuests($trader: String) {
+            tasks(trader: $trader) {
+                id
+                name
+                trader {
+                    name
+                }
+                minPlayerLevel
+                experience
+                taskRequirements {
+                    task {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+        """
+        
+        variables = {}
+        if trader:
+            variables["trader"] = trader
+        
+        result = await self.execute_query(query, variables)
+        return result.get("tasks", [])
+    
+    async def get_quest_by_id(self, quest_id: str) -> Optional[Dict[str, Any]]:
+        """Get detailed quest information by ID."""
+        query = """
+        query GetQuest($id: ID!) {
+            task(id: $id) {
+                id
+                name
+                description
+                wikiLink
+                trader {
+                    name
+                }
+                minPlayerLevel
+                experience
+                taskRequirements {
+                    task {
+                        id
+                        name
+                    }
+                }
+                objectives {
+                    id
+                    description
+                    optional
+                    target {
+                        name
+                    }
+                    maps {
+                        name
+                    }
+                }
+                finishRewards {
+                    items {
+                        item {
+                            id
+                            name
+                        }
+                        count
+                    }
+                    traderStanding {
+                        trader {
+                            name
+                        }
+                        standing
+                    }
+                    traderUnlock {
+                        name
+                    }
+                    skillLevelReward {
+                        name
+                        level
+                    }
+                }
+            }
+        }
+        """
+        
+        result = await self.execute_query(query, {"id": quest_id})
+        return result.get("task")
+    
+    async def search_quests(self, query: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Search for quests by name or description."""
+        gql_query = """
+        query SearchQuests($name: String, $limit: Int) {
+            tasks(name: $name, limit: $limit) {
+                id
+                name
+                description
+                trader {
+                    name
+                }
+                minPlayerLevel
+                experience
+            }
+        }
+        """
+        
+        result = await self.execute_query(gql_query, {"name": query, "limit": limit})
+        return result.get("tasks", [])
+    
+    async def get_ammo_data(self, caliber: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get ammunition data."""
+        query = """
+        query GetAmmo($caliber: String, $limit: Int) {
+            ammo(caliber: $caliber, limit: $limit) {
+                item {
+                    id
+                    name
+                    shortName
+                    avg24hPrice
+                }
+                caliber
+                damage
+                penetrationPower
+                armorDamage
+                fragmentationChance
+                ricochetChance
+                lightBleedModifier
+                heavyBleedModifier
+            }
+        }
+        """
+        
+        variables = {"limit": limit}
+        if caliber:
+            variables["caliber"] = caliber
+        
+        result = await self.execute_query(query, variables)
+        return result.get("ammo", [])
+    
+    async def get_hideout_modules(self) -> List[Dict[str, Any]]:
+        """Get hideout modules and their requirements."""
+        query = """
+        query GetHideoutModules {
+            hideoutModules {
+                id
+                name
+                level
+                require {
+                    item {
+                        id
+                        name
+                    }
+                    count
+                    module {
+                        name
+                    }
+                    level
+                    skill {
+                        name
+                    }
+                    trader {
+                        name
+                    }
+                }
+                bonuses {
+                    type
+                    value
+                }
+                crafts {
+                    duration
+                    requiredItems {
+                        item {
+                            id
+                            name
+                        }
+                        count
+                    }
+                    rewardItems {
+                        item {
+                            id
+                            name
+                        }
+                        count
+                    }
+                }
+            }
+        }
+        """
+        
+        result = await self.execute_query(query)
+        return result.get("hideoutModules", [])

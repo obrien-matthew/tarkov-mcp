@@ -58,6 +58,34 @@ class MarketTools:
                     },
                     "required": ["barter_id"]
                 }
+            ),
+            Tool(
+                name="get_ammo_data",
+                description="Get ammunition data and statistics",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "caliber": {
+                            "type": "string",
+                            "description": "Filter by ammunition caliber (e.g., '5.56x45mm', '7.62x39mm')"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of ammo types to return",
+                            "default": 50,
+                            "minimum": 1,
+                            "maximum": 200
+                        }
+                    }
+                }
+            ),
+            Tool(
+                name="get_hideout_modules",
+                description="Get hideout modules and their requirements",
+                inputSchema={
+                    "type": "object",
+                    "properties": {}
+                }
             )
         ]
     
@@ -293,4 +321,147 @@ class MarketTools:
             return [TextContent(
                 type="text",
                 text=f"Error calculating barter profit: {str(e)}"
+            )]
+    
+    async def handle_get_ammo_data(self, arguments: Dict[str, Any]) -> List[TextContent]:
+        """Handle get_ammo_data tool call."""
+        caliber = arguments.get("caliber")
+        limit = arguments.get("limit", 50)
+        
+        try:
+            async with TarkovGraphQLClient() as client:
+                ammo = await client.get_ammo_data(caliber=caliber, limit=limit)
+            
+            if not ammo:
+                caliber_text = f" for {caliber}" if caliber else ""
+                return [TextContent(
+                    type="text",
+                    text=f"No ammo data found{caliber_text}"
+                )]
+            
+            caliber_text = f" for {caliber}" if caliber else ""
+            result_text = f"# Ammo Data{caliber_text}\n\n"
+            
+            # Group by caliber
+            caliber_groups = {}
+            for ammo_item in ammo:
+                ammo_caliber = ammo_item.get("caliber", "Unknown")
+                if ammo_caliber not in caliber_groups:
+                    caliber_groups[ammo_caliber] = []
+                caliber_groups[ammo_caliber].append(ammo_item)
+            
+            for cal, ammo_list in caliber_groups.items():
+                result_text += f"## {cal}\n"
+                
+                # Sort by damage
+                ammo_list.sort(key=lambda x: x.get("damage", 0), reverse=True)
+                
+                for ammo_item in ammo_list:
+                    name = ammo_item.get("item", {}).get("name", "Unknown")
+                    damage = ammo_item.get("damage", 0)
+                    penetration = ammo_item.get("penetrationPower", 0)
+                    armor_damage = ammo_item.get("armorDamage", 0)
+                    price = ammo_item.get("item", {}).get("avg24hPrice", 0)
+                    
+                    result_text += f"• **{name}**\n"
+                    result_text += f"  - Damage: {damage}\n"
+                    result_text += f"  - Penetration: {penetration}\n"
+                    result_text += f"  - Armor Damage: {armor_damage}%\n"
+                    if price > 0:
+                        result_text += f"  - Price: ₽{price:,}\n"
+                        if damage > 0:
+                            damage_per_ruble = damage / price
+                            result_text += f"  - Damage/₽: {damage_per_ruble:.3f}\n"
+                    result_text += "\n"
+                
+                result_text += "\n"
+            
+            return [TextContent(type="text", text=result_text)]
+            
+        except Exception as e:
+            logger.error(f"Error getting ammo data: {e}")
+            return [TextContent(
+                type="text",
+                text=f"Error getting ammo data: {str(e)}"
+            )]
+    
+    async def handle_get_hideout_modules(self, arguments: Dict[str, Any]) -> List[TextContent]:
+        """Handle get_hideout_modules tool call."""
+        try:
+            async with TarkovGraphQLClient() as client:
+                modules = await client.get_hideout_modules()
+            
+            if not modules:
+                return [TextContent(
+                    type="text",
+                    text="No hideout modules found"
+                )]
+            
+            result_text = f"# Hideout Modules ({len(modules)} found)\n\n"
+            
+            for module in modules:
+                name = module.get("name", "Unknown")
+                level = module.get("level", 0)
+                
+                result_text += f"## {name} (Level {level})\n"
+                
+                # Construction requirements
+                if module.get("require"):
+                    result_text += f"### Construction Requirements\n"
+                    for req in module["require"]:
+                        if req.get("item"):
+                            item_name = req["item"].get("name", "Unknown")
+                            count = req.get("count", 1)
+                            result_text += f"• {count}x {item_name}\n"
+                        elif req.get("module"):
+                            module_name = req["module"].get("name", "Unknown")
+                            module_level = req.get("level", 1)
+                            result_text += f"• {module_name} Level {module_level}\n"
+                        elif req.get("skill"):
+                            skill_name = req["skill"].get("name", "Unknown")
+                            skill_level = req.get("level", 1)
+                            result_text += f"• {skill_name} Level {skill_level}\n"
+                        elif req.get("trader"):
+                            trader_name = req["trader"].get("name", "Unknown")
+                            trader_level = req.get("level", 1)
+                            result_text += f"• {trader_name} Level {trader_level}\n"
+                
+                # Bonuses
+                if module.get("bonuses"):
+                    result_text += f"\n### Bonuses\n"
+                    for bonus in module["bonuses"]:
+                        bonus_type = bonus.get("type", "Unknown")
+                        value = bonus.get("value", 0)
+                        result_text += f"• {bonus_type}: {value}\n"
+                
+                # Crafts
+                if module.get("crafts"):
+                    result_text += f"\n### Available Crafts\n"
+                    for craft in module["crafts"]:
+                        craft_duration = craft.get("duration", 0)
+                        result_text += f"• Craft (Duration: {craft_duration}s)\n"
+                        
+                        if craft.get("requiredItems"):
+                            result_text += f"  Required:\n"
+                            for req_item in craft["requiredItems"]:
+                                item_name = req_item.get("item", {}).get("name", "Unknown")
+                                count = req_item.get("count", 1)
+                                result_text += f"    - {count}x {item_name}\n"
+                        
+                        if craft.get("rewardItems"):
+                            result_text += f"  Produces:\n"
+                            for reward_item in craft["rewardItems"]:
+                                item_name = reward_item.get("item", {}).get("name", "Unknown")
+                                count = reward_item.get("count", 1)
+                                result_text += f"    - {count}x {item_name}\n"
+                
+                result_text += "\n---\n\n"
+            
+            return [TextContent(type="text", text=result_text)]
+            
+        except Exception as e:
+            logger.error(f"Error getting hideout modules: {e}")
+            return [TextContent(
+                type="text",
+                text=f"Error getting hideout modules: {str(e)}"
             )]

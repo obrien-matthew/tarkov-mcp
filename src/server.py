@@ -13,6 +13,9 @@ import mcp.types as types
 
 from tools.items import ItemTools
 from tools.market import MarketTools
+from tools.maps import MapTools
+from tools.traders import TraderTools
+from tools.quests import QuestTools
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,9 +28,18 @@ class TarkovMCPServer:
         self.server = Server("tarkov-mcp-server")
         self.item_tools = ItemTools()
         self.market_tools = MarketTools()
+        self.map_tools = MapTools()
+        self.trader_tools = TraderTools()
+        self.quest_tools = QuestTools()
         
         # Combine all tools
-        self.all_tools = self.item_tools.tools + self.market_tools.tools
+        self.all_tools = (
+            self.item_tools.tools + 
+            self.market_tools.tools + 
+            self.map_tools.tools + 
+            self.trader_tools.tools + 
+            self.quest_tools.tools
+        )
         
         # Register handlers
         self._register_handlers()
@@ -51,12 +63,38 @@ class TarkovMCPServer:
                     return await self.item_tools.handle_search_items(arguments)
                 elif name == "get_item_details":
                     return await self.item_tools.handle_get_item_details(arguments)
+                elif name == "get_item_prices":
+                    return await self.item_tools.handle_get_item_prices(arguments)
+                elif name == "compare_items":
+                    return await self.item_tools.handle_compare_items(arguments)
                 elif name == "get_flea_market_data":
                     return await self.market_tools.handle_get_flea_market_data(arguments)
                 elif name == "get_barter_trades":
                     return await self.market_tools.handle_get_barter_trades(arguments)
                 elif name == "calculate_barter_profit":
                     return await self.market_tools.handle_calculate_barter_profit(arguments)
+                elif name == "get_ammo_data":
+                    return await self.market_tools.handle_get_ammo_data(arguments)
+                elif name == "get_hideout_modules":
+                    return await self.market_tools.handle_get_hideout_modules(arguments)
+                elif name == "get_maps":
+                    return await self.map_tools.handle_get_maps(arguments)
+                elif name == "get_map_details":
+                    return await self.map_tools.handle_get_map_details(arguments)
+                elif name == "get_map_spawns":
+                    return await self.map_tools.handle_get_map_spawns(arguments)
+                elif name == "get_traders":
+                    return await self.trader_tools.handle_get_traders(arguments)
+                elif name == "get_trader_details":
+                    return await self.trader_tools.handle_get_trader_details(arguments)
+                elif name == "get_trader_items":
+                    return await self.trader_tools.handle_get_trader_items(arguments)
+                elif name == "get_quests":
+                    return await self.quest_tools.handle_get_quests(arguments)
+                elif name == "get_quest_details":
+                    return await self.quest_tools.handle_get_quest_details(arguments)
+                elif name == "search_quests":
+                    return await self.quest_tools.handle_search_quests(arguments)
                 else:
                     return [TextContent(
                         type="text",

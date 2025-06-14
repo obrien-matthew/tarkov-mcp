@@ -50,6 +50,36 @@ class ItemTools:
                     },
                     "required": ["item_id"]
                 }
+            ),
+            Tool(
+                name="get_item_prices",
+                description="Get current market prices for multiple items",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "item_names": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of item names to get prices for"
+                        }
+                    },
+                    "required": ["item_names"]
+                }
+            ),
+            Tool(
+                name="compare_items",
+                description="Compare stats and prices between multiple items",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "item_ids": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of item IDs to compare"
+                        }
+                    },
+                    "required": ["item_ids"]
+                }
             )
         ]
     
@@ -180,4 +210,148 @@ class ItemTools:
             return [TextContent(
                 type="text",
                 text=f"Error getting item details: {str(e)}"
+            )]
+    
+    async def handle_get_item_prices(self, arguments: Dict[str, Any]) -> List[TextContent]:
+        """Handle get_item_prices tool call."""
+        item_names = arguments.get("item_names", [])
+        
+        if not item_names:
+            return [TextContent(
+                type="text",
+                text="Error: 'item_names' list is required"
+            )]
+        
+        try:
+            async with TarkovGraphQLClient() as client:
+                all_prices = []
+                
+                for item_name in item_names:
+                    items = await client.search_items(name=item_name, limit=1)
+                    if items:
+                        all_prices.append(items[0])
+                    else:
+                        all_prices.append({"name": item_name, "error": "Not found"})
+            
+            result_text = f"# Item Prices ({len(item_names)} requested)\n\n"
+            
+            for item in all_prices:
+                if item.get("error"):
+                    result_text += f"• **{item['name']}**: {item['error']}\n"
+                else:
+                    name = item.get("name", "Unknown")
+                    avg_price = item.get("avg24hPrice", 0)
+                    low_price = item.get("low24hPrice", 0)
+                    high_price = item.get("high24hPrice", 0)
+                    change_48h = item.get("changeLast48hPercent", 0)
+                    
+                    result_text += f"• **{name}**\n"
+                    if avg_price > 0:
+                        result_text += f"  - Average: ₽{avg_price:,}\n"
+                        if low_price and high_price:
+                            result_text += f"  - Range: ₽{low_price:,} - ₽{high_price:,}\n"
+                        if change_48h != 0:
+                            trend = "📈" if change_48h > 0 else "📉"
+                            result_text += f"  - 48h Change: {change_48h:+.1f}% {trend}\n"
+                    else:
+                        result_text += f"  - No price data available\n"
+                
+                result_text += "\n"
+            
+            return [TextContent(type="text", text=result_text)]
+            
+        except Exception as e:
+            logger.error(f"Error getting item prices: {e}")
+            return [TextContent(
+                type="text",
+                text=f"Error getting item prices: {str(e)}"
+            )]
+    
+    async def handle_compare_items(self, arguments: Dict[str, Any]) -> List[TextContent]:
+        """Handle compare_items tool call."""
+        item_ids = arguments.get("item_ids", [])
+        
+        if not item_ids or len(item_ids) < 2:
+            return [TextContent(
+                type="text",
+                text="Error: At least 2 item IDs are required for comparison"
+            )]
+        
+        try:
+            async with TarkovGraphQLClient() as client:
+                items = []
+                for item_id in item_ids:
+                    item = await client.get_item_by_id(item_id)
+                    if item:
+                        items.append(item)
+                    else:
+                        items.append({"id": item_id, "error": "Not found"})
+            
+            result_text = f"# Item Comparison ({len(items)} items)\n\n"
+            
+            # Basic info comparison
+            result_text += "## Basic Information\n"
+            result_text += "| Item | Weight | Size | Base Price |\n"
+            result_text += "|------|--------|------|------------|\n"
+            
+            for item in items:
+                if item.get("error"):
+                    result_text += f"| {item['id']} | Error: {item['error']} | - | - |\n"
+                else:
+                    name = item.get("name", "Unknown")
+                    weight = item.get("weight", 0)
+                    width = item.get("width", 0)
+                    height = item.get("height", 0)
+                    base_price = item.get("basePrice", 0)
+                    
+                    result_text += f"| {name} | {weight}kg | {width}x{height} | ₽{base_price:,} |\n"
+            
+            # Market prices comparison
+            result_text += "\n## Market Prices\n"
+            result_text += "| Item | 24h Average | 24h Low | 24h High | 48h Change |\n"
+            result_text += "|------|-------------|---------|----------|------------|\n"
+            
+            for item in items:
+                if not item.get("error"):
+                    name = item.get("name", "Unknown")
+                    avg_price = item.get("avg24hPrice", 0)
+                    low_price = item.get("low24hPrice", 0)
+                    high_price = item.get("high24hPrice", 0)
+                    change_48h = item.get("changeLast48hPercent", 0)
+                    
+                    avg_text = f"₽{avg_price:,}" if avg_price > 0 else "N/A"
+                    low_text = f"₽{low_price:,}" if low_price > 0 else "N/A"
+                    high_text = f"₽{high_price:,}" if high_price > 0 else "N/A"
+                    change_text = f"{change_48h:+.1f}%" if change_48h != 0 else "0%"
+                    
+                    result_text += f"| {name} | {avg_text} | {low_text} | {high_text} | {change_text} |\n"
+            
+            # Value analysis
+            valid_items = [item for item in items if not item.get("error") and item.get("avg24hPrice", 0) > 0]
+            if len(valid_items) > 1:
+                result_text += "\n## Value Analysis\n"
+                
+                # Price per slot
+                result_text += "### Price per Inventory Slot\n"
+                for item in valid_items:
+                    name = item.get("name", "Unknown")
+                    avg_price = item.get("avg24hPrice", 0)
+                    width = item.get("width", 1)
+                    height = item.get("height", 1)
+                    slots = width * height
+                    price_per_slot = avg_price / slots if slots > 0 else 0
+                    
+                    result_text += f"• **{name}**: ₽{price_per_slot:,.0f} per slot\n"
+                
+                # Best value
+                best_value_item = max(valid_items, key=lambda x: x.get("avg24hPrice", 0) / (x.get("width", 1) * x.get("height", 1)))
+                result_text += f"\n**Best Value:** {best_value_item.get('name', 'Unknown')}\n"
+            
+            return [TextContent(type="text", text=result_text)]
+            
+        except Exception as e:
+            logger.error(f"Error comparing items: {e}")
+            return [TextContent(
+                type="text",
+                text=f"Error comparing items: {str(e)}"
             )]
