@@ -5,6 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
+from tarkov_mcp.schema import Task, parse_task_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -69,14 +70,17 @@ class QuestTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                quests = await client.get_quests(trader=trader)
+                quests_data = await client.get_quests(trader=trader)
             
-            if not quests:
+            if not quests_data:
                 trader_text = f" from {trader}" if trader else ""
                 return [TextContent(
                     type="text",
                     text=f"No quests found{trader_text}"
                 )]
+            
+            # Parse quests using schema
+            quests = [parse_task_from_api(quest_data) for quest_data in quests_data]
             
             trader_text = f" from {trader}" if trader else ""
             result_text = f"# Available Quests{trader_text} ({len(quests)} found)\n\n"
@@ -84,7 +88,7 @@ class QuestTools:
             # Group by trader
             trader_quests = {}
             for quest in quests:
-                trader_name = quest.get("trader", {}).get("name", "Unknown")
+                trader_name = quest.trader.name if quest.trader else "Unknown"
                 if trader_name not in trader_quests:
                     trader_quests[trader_name] = []
                 trader_quests[trader_name].append(quest)
@@ -93,22 +97,19 @@ class QuestTools:
                 result_text += f"## {trader_name} ({len(quest_list)} quests)\n"
                 
                 for quest in quest_list:
-                    quest_name = quest.get("name", "Unknown")
-                    min_level = quest.get("minPlayerLevel", 0)
-                    
-                    result_text += f"• **{quest_name}**"
-                    if min_level > 0:
-                        result_text += f" (Level {min_level}+)"
+                    result_text += f"• **{quest.name}**"
+                    if quest.min_player_level and quest.min_player_level > 0:
+                        result_text += f" (Level {quest.min_player_level}+)"
                     result_text += f"\n"
-                    result_text += f"  ID: {quest.get('id', 'Unknown')}\n"
+                    result_text += f"  ID: {quest.id}\n"
                     
                     # Experience reward
-                    if quest.get("experience"):
-                        result_text += f"  XP: {quest['experience']:,}\n"
+                    if quest.experience:
+                        result_text += f"  XP: {quest.experience:,}\n"
                     
                     # Prerequisites
-                    if quest.get("taskRequirements"):
-                        prereq_count = len(quest["taskRequirements"])
+                    if quest.task_requirements:
+                        prereq_count = len(quest.task_requirements)
                         result_text += f"  Prerequisites: {prereq_count} quest(s)\n"
                     
                     result_text += "\n"
@@ -136,46 +137,50 @@ class QuestTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                quest = await client.get_quest_by_id(quest_id)
+                quest_data = await client.get_quest_by_id(quest_id)
             
-            if not quest:
+            if not quest_data:
                 return [TextContent(
                     type="text",
                     text=f"No quest found with ID: {quest_id}"
                 )]
             
-            result_text = f"# {quest['name']}\n\n"
+            # Parse quest using schema
+            quest = parse_task_from_api(quest_data)
+            
+            result_text = f"# {quest.name}\n\n"
             
             # Basic info
-            trader_name = quest.get("trader", {}).get("name", "Unknown")
+            trader_name = quest.trader.name if quest.trader else "Unknown"
             result_text += f"**Trader:** {trader_name}\n"
-            result_text += f"**ID:** {quest['id']}\n"
+            result_text += f"**ID:** {quest.id}\n"
             
-            if quest.get("minPlayerLevel"):
-                result_text += f"**Minimum Level:** {quest['minPlayerLevel']}\n"
+            if quest.min_player_level:
+                result_text += f"**Minimum Level:** {quest.min_player_level}\n"
             
-            if quest.get("experience"):
-                result_text += f"**Experience Reward:** {quest['experience']:,} XP\n"
+            if quest.experience:
+                result_text += f"**Experience Reward:** {quest.experience:,} XP\n"
             
             result_text += "\n"
             
-            # Description
-            if quest.get("description"):
-                result_text += f"## Description\n{quest['description']}\n\n"
+            # Description (not in schema, use raw data)
+            description = quest_data.get("description")
+            if description:
+                result_text += f"## Description\n{description}\n\n"
             
             # Prerequisites
-            if quest.get("taskRequirements"):
+            if quest.task_requirements:
                 result_text += f"## Prerequisites\n"
-                for req in quest["taskRequirements"]:
+                for req in quest.task_requirements:
                     req_quest = req.get("task", {})
                     req_name = req_quest.get("name", "Unknown")
                     result_text += f"• Complete: **{req_name}**\n"
                 result_text += "\n"
             
             # Objectives
-            if quest.get("objectives"):
+            if quest.objectives:
                 result_text += f"## Objectives\n"
-                for i, objective in enumerate(quest["objectives"], 1):
+                for i, objective in enumerate(quest.objectives, 1):
                     obj_description = objective.get("description", "Unknown objective")
                     result_text += f"{i}. {obj_description}\n"
                     
@@ -262,35 +267,36 @@ class QuestTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                quests = await client.search_quests(query, limit)
+                quests_data = await client.search_quests(query, limit)
             
-            if not quests:
+            if not quests_data:
                 return [TextContent(
                     type="text",
                     text=f"No quests found matching '{query}'"
                 )]
             
+            # Parse quests using schema
+            quests = [parse_task_from_api(quest_data) for quest_data in quests_data]
+            
             result_text = f"# Quest Search Results for '{query}'\n\n"
             result_text += f"Found {len(quests)} matching quests:\n\n"
             
-            for quest in quests:
-                quest_name = quest.get("name", "Unknown")
-                trader_name = quest.get("trader", {}).get("name", "Unknown")
-                min_level = quest.get("minPlayerLevel", 0)
-                experience = quest.get("experience", 0)
+            for i, quest in enumerate(quests):
+                trader_name = quest.trader.name if quest.trader else "Unknown"
                 
-                result_text += f"• **{quest_name}** (from {trader_name})\n"
-                result_text += f"  ID: {quest.get('id', 'Unknown')}\n"
+                result_text += f"• **{quest.name}** (from {trader_name})\n"
+                result_text += f"  ID: {quest.id}\n"
                 
-                if min_level > 0:
-                    result_text += f"  Min Level: {min_level}\n"
-                if experience > 0:
-                    result_text += f"  XP Reward: {experience:,}\n"
+                if quest.min_player_level and quest.min_player_level > 0:
+                    result_text += f"  Min Level: {quest.min_player_level}\n"
+                if quest.experience and quest.experience > 0:
+                    result_text += f"  XP Reward: {quest.experience:,}\n"
                 
-                # Short description if available
-                if quest.get("description"):
-                    desc = quest["description"][:100]
-                    if len(quest["description"]) > 100:
+                # Short description if available (from raw data)
+                quest_data = quests_data[i]
+                if quest_data.get("description"):
+                    desc = quest_data["description"][:100]
+                    if len(quest_data["description"]) > 100:
                         desc += "..."
                     result_text += f"  Description: {desc}\n"
                 

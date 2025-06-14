@@ -5,6 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
+from tarkov_mcp.schema import Item, parse_item_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -97,25 +98,29 @@ class ItemTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                items = await client.search_items(name=name, item_type=item_type, limit=limit)
+                items_data = await client.search_items(name=name, item_type=item_type, limit=limit)
             
-            if not items:
+            if not items_data:
                 return [TextContent(
                     type="text",
                     text="No items found matching the search criteria"
                 )]
             
+            # Parse items using schema
+            items = [parse_item_from_api(item_data) for item_data in items_data]
+            
             # Format results
             result_text = f"Found {len(items)} items:\n\n"
             for item in items:
                 price_info = ""
-                if item.get("avg24hPrice"):
-                    price_info = f" (₽{item['avg24hPrice']:,})"
+                if item.avg24h_price:
+                    price_info = f" (₽{item.avg24h_price:,})"
                 
-                result_text += f"• **{item['name']}** ({item['shortName']}){price_info}\n"
-                result_text += f"  ID: {item['id']}\n"
-                if item.get("types"):
-                    result_text += f"  Types: {', '.join(item['types'])}\n"
+                short_name = item.short_name or ""
+                result_text += f"• **{item.name}** ({short_name}){price_info}\n"
+                result_text += f"  ID: {item.id}\n"
+                if item.types:
+                    result_text += f"  Types: {', '.join(item.types)}\n"
                 result_text += "\n"
             
             return [TextContent(type="text", text=result_text)]
@@ -139,69 +144,76 @@ class ItemTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                item = await client.get_item_by_id(item_id)
+                item_data = await client.get_item_by_id(item_id)
             
-            if not item:
+            if not item_data:
                 return [TextContent(
                     type="text",
                     text=f"No item found with ID: {item_id}"
                 )]
             
-            # Format detailed item information
-            result_text = f"# {item['name']} ({item['shortName']})\n\n"
+            # Parse item using schema
+            item = parse_item_from_api(item_data)
             
-            if item.get("description"):
-                result_text += f"**Description:** {item['description']}\n\n"
+            # Format detailed item information
+            short_name = item.short_name or ""
+            result_text = f"# {item.name} ({short_name})\n\n"
+            
+            if item.description:
+                result_text += f"**Description:** {item.description}\n\n"
             
             # Basic properties
             result_text += "## Properties\n"
-            result_text += f"• **ID:** {item['id']}\n"
-            result_text += f"• **Weight:** {item.get('weight', 'N/A')} kg\n"
-            result_text += f"• **Size:** {item.get('width', 'N/A')}x{item.get('height', 'N/A')} slots\n"
-            result_text += f"• **Base Price:** ₽{item.get('basePrice', 0):,}\n"
+            result_text += f"• **ID:** {item.id}\n"
+            result_text += f"• **Weight:** {item.weight or 'N/A'} kg\n"
+            # Note: width/height not in schema, using raw data for now
+            width = item_data.get('width', 'N/A')
+            height = item_data.get('height', 'N/A')
+            result_text += f"• **Size:** {width}x{height} slots\n"
+            result_text += f"• **Base Price:** ₽{item.base_price or 0:,}\n"
             
-            if item.get("types"):
-                result_text += f"• **Types:** {', '.join(item['types'])}\n"
+            if item.types:
+                result_text += f"• **Types:** {', '.join(item.types)}\n"
             
             # Price information
-            if item.get("avg24hPrice"):
+            if item.avg24h_price:
                 result_text += f"\n## Market Prices\n"
-                result_text += f"• **24h Average:** ₽{item['avg24hPrice']:,}\n"
+                result_text += f"• **24h Average:** ₽{item.avg24h_price:,}\n"
                 
-                if item.get("low24hPrice"):
-                    result_text += f"• **24h Low:** ₽{item['low24hPrice']:,}\n"
-                if item.get("high24hPrice"):
-                    result_text += f"• **24h High:** ₽{item['high24hPrice']:,}\n"
-                if item.get("changeLast48h"):
-                    change_percent = item.get("changeLast48hPercent", 0)
-                    result_text += f"• **48h Change:** ₽{item['changeLast48h']:,} ({change_percent:+.1f}%)\n"
+                if item.low24h_price:
+                    result_text += f"• **24h Low:** ₽{item.low24h_price:,}\n"
+                if item.high24h_price:
+                    result_text += f"• **24h High:** ₽{item.high24h_price:,}\n"
+                if item.change_last48h:
+                    change_percent = item.change_last48h_percent or 0
+                    result_text += f"• **48h Change:** ₽{item.change_last48h:,} ({change_percent:+.1f}%)\n"
             
             # Sell prices
-            if item.get("sellFor"):
+            if item_data.get("sellFor"):
                 result_text += f"\n## Sell Prices\n"
-                for sell_option in item["sellFor"]:
+                for sell_option in item_data["sellFor"]:
                     source = sell_option.get("source", "Unknown")
                     price = sell_option.get("priceRUB", 0)
                     result_text += f"• **{source}:** ₽{price:,}\n"
             
             # Buy prices
-            if item.get("buyFor"):
+            if item_data.get("buyFor"):
                 result_text += f"\n## Buy Prices\n"
-                for buy_option in item["buyFor"]:
+                for buy_option in item_data["buyFor"]:
                     source = buy_option.get("source", "Unknown")
                     price = buy_option.get("priceRUB", 0)
                     result_text += f"• **{source}:** ₽{price:,}\n"
             
             # Quest usage
-            if item.get("usedInTasks"):
+            if item_data.get("usedInTasks"):
                 result_text += f"\n## Used in Quests\n"
-                for task in item["usedInTasks"]:
+                for task in item_data["usedInTasks"]:
                     trader = task.get("trader", {}).get("name", "Unknown")
                     result_text += f"• **{task['name']}** (from {trader})\n"
             
             # Links
-            if item.get("wikiLink"):
-                result_text += f"\n**Wiki:** {item['wikiLink']}\n"
+            if item.wiki_link:
+                result_text += f"\n**Wiki:** {item.wiki_link}\n"
             
             return [TextContent(type="text", text=result_text)]
             
@@ -227,32 +239,30 @@ class ItemTools:
                 all_prices = []
                 
                 for item_name in item_names:
-                    items = await client.search_items(name=item_name, limit=1)
-                    if items:
-                        all_prices.append(items[0])
+                    items_data = await client.search_items(name=item_name, limit=1)
+                    if items_data:
+                        item = parse_item_from_api(items_data[0])
+                        all_prices.append(item)
                     else:
-                        all_prices.append({"name": item_name, "error": "Not found"})
+                        # Create a minimal item for error case
+                        error_item = Item(id="", name=item_name)
+                        error_item.error = "Not found"  # Add error attribute
+                        all_prices.append(error_item)
             
             result_text = f"# Item Prices ({len(item_names)} requested)\n\n"
             
             for item in all_prices:
-                if item.get("error"):
-                    result_text += f"• **{item['name']}**: {item['error']}\n"
+                if hasattr(item, 'error'):
+                    result_text += f"• **{item.name}**: {item.error}\n"
                 else:
-                    name = item.get("name", "Unknown")
-                    avg_price = item.get("avg24hPrice", 0)
-                    low_price = item.get("low24hPrice", 0)
-                    high_price = item.get("high24hPrice", 0)
-                    change_48h = item.get("changeLast48hPercent", 0)
-                    
-                    result_text += f"• **{name}**\n"
-                    if avg_price > 0:
-                        result_text += f"  - Average: ₽{avg_price:,}\n"
-                        if low_price and high_price:
-                            result_text += f"  - Range: ₽{low_price:,} - ₽{high_price:,}\n"
-                        if change_48h != 0:
-                            trend = "📈" if change_48h > 0 else "📉"
-                            result_text += f"  - 48h Change: {change_48h:+.1f}% {trend}\n"
+                    result_text += f"• **{item.name}**\n"
+                    if item.avg24h_price and item.avg24h_price > 0:
+                        result_text += f"  - Average: ₽{item.avg24h_price:,}\n"
+                        if item.low24h_price and item.high24h_price:
+                            result_text += f"  - Range: ₽{item.low24h_price:,} - ₽{item.high24h_price:,}\n"
+                        if item.change_last48h_percent and item.change_last48h_percent != 0:
+                            trend = "📈" if item.change_last48h_percent > 0 else "📉"
+                            result_text += f"  - 48h Change: {item.change_last48h_percent:+.1f}% {trend}\n"
                     else:
                         result_text += f"  - No price data available\n"
                 
@@ -281,11 +291,16 @@ class ItemTools:
             async with TarkovGraphQLClient() as client:
                 items = []
                 for item_id in item_ids:
-                    item = await client.get_item_by_id(item_id)
-                    if item:
+                    item_data = await client.get_item_by_id(item_id)
+                    if item_data:
+                        item = parse_item_from_api(item_data)
+                        # Store raw data for fields not in schema
+                        item._raw_data = item_data
                         items.append(item)
                     else:
-                        items.append({"id": item_id, "error": "Not found"})
+                        error_item = Item(id=item_id, name="")
+                        error_item.error = "Not found"
+                        items.append(error_item)
             
             result_text = f"# Item Comparison ({len(items)} items)\n\n"
             
@@ -295,16 +310,15 @@ class ItemTools:
             result_text += "|------|--------|------|------------|\n"
             
             for item in items:
-                if item.get("error"):
-                    result_text += f"| {item['id']} | Error: {item['error']} | - | - |\n"
+                if hasattr(item, 'error'):
+                    result_text += f"| {item.id} | Error: {item.error} | - | - |\n"
                 else:
-                    name = item.get("name", "Unknown")
-                    weight = item.get("weight", 0)
-                    width = item.get("width", 0)
-                    height = item.get("height", 0)
-                    base_price = item.get("basePrice", 0)
+                    weight = item.weight or 0
+                    width = getattr(item, '_raw_data', {}).get('width', 0)
+                    height = getattr(item, '_raw_data', {}).get('height', 0)
+                    base_price = item.base_price or 0
                     
-                    result_text += f"| {name} | {weight}kg | {width}x{height} | ₽{base_price:,} |\n"
+                    result_text += f"| {item.name} | {weight}kg | {width}x{height} | ₽{base_price:,} |\n"
             
             # Market prices comparison
             result_text += "\n## Market Prices\n"
@@ -312,40 +326,44 @@ class ItemTools:
             result_text += "|------|-------------|---------|----------|------------|\n"
             
             for item in items:
-                if not item.get("error"):
-                    name = item.get("name", "Unknown")
-                    avg_price = item.get("avg24hPrice", 0)
-                    low_price = item.get("low24hPrice", 0)
-                    high_price = item.get("high24hPrice", 0)
-                    change_48h = item.get("changeLast48hPercent", 0)
+                if not hasattr(item, 'error'):
+                    avg_price = item.avg24h_price or 0
+                    low_price = item.low24h_price or 0
+                    high_price = item.high24h_price or 0
+                    change_48h = item.change_last48h_percent or 0
                     
                     avg_text = f"₽{avg_price:,}" if avg_price > 0 else "N/A"
                     low_text = f"₽{low_price:,}" if low_price > 0 else "N/A"
                     high_text = f"₽{high_price:,}" if high_price > 0 else "N/A"
                     change_text = f"{change_48h:+.1f}%" if change_48h != 0 else "0%"
                     
-                    result_text += f"| {name} | {avg_text} | {low_text} | {high_text} | {change_text} |\n"
+                    result_text += f"| {item.name} | {avg_text} | {low_text} | {high_text} | {change_text} |\n"
             
             # Value analysis
-            valid_items = [item for item in items if not item.get("error") and item.get("avg24hPrice", 0) > 0]
+            valid_items = [item for item in items if not hasattr(item, 'error') and (item.avg24h_price or 0) > 0]
             if len(valid_items) > 1:
                 result_text += "\n## Value Analysis\n"
                 
                 # Price per slot
                 result_text += "### Price per Inventory Slot\n"
                 for item in valid_items:
-                    name = item.get("name", "Unknown")
-                    avg_price = item.get("avg24hPrice", 0)
-                    width = item.get("width", 1)
-                    height = item.get("height", 1)
+                    avg_price = item.avg24h_price or 0
+                    width = getattr(item, '_raw_data', {}).get('width', 1)
+                    height = getattr(item, '_raw_data', {}).get('height', 1)
                     slots = width * height
                     price_per_slot = avg_price / slots if slots > 0 else 0
                     
-                    result_text += f"• **{name}**: ₽{price_per_slot:,.0f} per slot\n"
+                    result_text += f"• **{item.name}**: ₽{price_per_slot:,.0f} per slot\n"
                 
                 # Best value
-                best_value_item = max(valid_items, key=lambda x: x.get("avg24hPrice", 0) / (x.get("width", 1) * x.get("height", 1)))
-                result_text += f"\n**Best Value:** {best_value_item.get('name', 'Unknown')}\n"
+                def get_value_ratio(item):
+                    avg_price = item.avg24h_price or 0
+                    width = getattr(item, '_raw_data', {}).get('width', 1)
+                    height = getattr(item, '_raw_data', {}).get('height', 1)
+                    return avg_price / (width * height)
+                
+                best_value_item = max(valid_items, key=get_value_ratio)
+                result_text += f"\n**Best Value:** {best_value_item.name}\n"
             
             return [TextContent(type="text", text=result_text)]
             

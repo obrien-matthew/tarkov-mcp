@@ -5,6 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
+from tarkov_mcp.schema import Trader, parse_trader_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -61,35 +62,39 @@ class TraderTools:
         """Handle get_traders tool call."""
         try:
             async with TarkovGraphQLClient() as client:
-                traders = await client.get_traders()
+                traders_data = await client.get_traders()
             
-            if not traders:
+            if not traders_data:
                 return [TextContent(
                     type="text",
                     text="No traders found"
                 )]
             
+            # Parse traders using schema
+            traders = [parse_trader_from_api(trader_data) for trader_data in traders_data]
+            
             result_text = f"# Available Traders ({len(traders)} found)\n\n"
             
             for trader in traders:
-                name = trader.get("name", "Unknown")
-                description = trader.get("description", "")
-                location = trader.get("location", "")
-                
-                result_text += f"## {name}\n"
-                if description:
-                    result_text += f"**Description:** {description}\n"
+                result_text += f"## {trader.name}\n"
+                if trader.description:
+                    result_text += f"**Description:** {trader.description}\n"
+                # Note: location not in schema, using raw data
+                location = next((td.get("location") for td in traders_data if td.get("name") == trader.name), None)
                 if location:
                     result_text += f"**Location:** {location}\n"
                 
                 # Reset times
-                if trader.get("resetTime"):
-                    result_text += f"**Reset Time:** {trader['resetTime']} hours\n"
+                if trader.reset_time:
+                    result_text += f"**Reset Time:** {trader.reset_time} hours\n"
                 
                 # Currency
-                if trader.get("currency"):
-                    currencies = [curr.get("name", "Unknown") for curr in trader["currency"]]
-                    result_text += f"**Accepts:** {', '.join(currencies)}\n"
+                if trader.currency:
+                    if isinstance(trader.currency, list):
+                        currencies = [curr.get("name", "Unknown") for curr in trader.currency]
+                        result_text += f"**Accepts:** {', '.join(currencies)}\n"
+                    elif isinstance(trader.currency, dict):
+                        result_text += f"**Accepts:** {trader.currency.get('name', 'Unknown')}\n"
                 
                 result_text += "\n"
             
@@ -114,35 +119,42 @@ class TraderTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                trader = await client.get_trader_by_name(trader_name)
+                trader_data = await client.get_trader_by_name(trader_name)
             
-            if not trader:
+            if not trader_data:
                 return [TextContent(
                     type="text",
                     text=f"No trader found with name: {trader_name}"
                 )]
             
-            result_text = f"# {trader['name']}\n\n"
+            # Parse trader using schema
+            trader = parse_trader_from_api(trader_data)
             
-            if trader.get("description"):
-                result_text += f"**Description:** {trader['description']}\n\n"
+            result_text = f"# {trader.name}\n\n"
+            
+            if trader.description:
+                result_text += f"**Description:** {trader.description}\n\n"
             
             # Basic info
             result_text += "## Trader Information\n"
-            if trader.get("location"):
-                result_text += f"• **Location:** {trader['location']}\n"
-            if trader.get("resetTime"):
-                result_text += f"• **Reset Time:** {trader['resetTime']} hours\n"
+            location = trader_data.get("location")
+            if location:
+                result_text += f"• **Location:** {location}\n"
+            if trader.reset_time:
+                result_text += f"• **Reset Time:** {trader.reset_time} hours\n"
             
             # Currency accepted
-            if trader.get("currency"):
-                currencies = [curr.get("name", "Unknown") for curr in trader["currency"]]
-                result_text += f"• **Accepts:** {', '.join(currencies)}\n"
+            if trader.currency:
+                if isinstance(trader.currency, list):
+                    currencies = [curr.get("name", "Unknown") for curr in trader.currency]
+                    result_text += f"• **Accepts:** {', '.join(currencies)}\n"
+                elif isinstance(trader.currency, dict):
+                    result_text += f"• **Accepts:** {trader.currency.get('name', 'Unknown')}\n"
             
             # Levels and requirements
-            if trader.get("levels"):
+            if trader.levels:
                 result_text += f"\n## Loyalty Levels\n"
-                for level in trader["levels"]:
+                for level in trader.levels:
                     level_num = level.get("level", 0)
                     result_text += f"### Level {level_num}\n"
                     

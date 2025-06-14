@@ -5,6 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
+from tarkov_mcp.schema import Item, Trader, Barter, Ammo, parse_item_from_api, parse_trader_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -95,27 +96,31 @@ class MarketTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                items = await client.get_flea_market_data(limit=limit)
+                items_data = await client.get_flea_market_data(limit=limit)
             
-            if not items:
+            if not items_data:
                 return [TextContent(
                     type="text",
                     text="No flea market data available"
                 )]
             
+            # Parse items using schema
+            items = [parse_item_from_api(item_data) for item_data in items_data]
+            
             # Sort by 24h average price (highest first)
-            items_with_prices = [item for item in items if item.get("avg24hPrice")]
-            items_with_prices.sort(key=lambda x: x.get("avg24hPrice", 0), reverse=True)
+            items_with_prices = [item for item in items if item.avg24h_price]
+            items_with_prices.sort(key=lambda x: x.avg24h_price or 0, reverse=True)
             
             result_text = f"# Flea Market Data (Top {len(items_with_prices)} items)\n\n"
             
             for item in items_with_prices[:limit]:
-                avg_price = item.get("avg24hPrice", 0)
-                low_price = item.get("low24hPrice", 0)
-                high_price = item.get("high24hPrice", 0)
-                change_48h = item.get("changeLast48hPercent", 0)
+                avg_price = item.avg24h_price or 0
+                low_price = item.low24h_price or 0
+                high_price = item.high24h_price or 0
+                change_48h = item.change_last48h_percent or 0
                 
-                result_text += f"## {item['name']} ({item['shortName']})\n"
+                short_name = item.short_name or ""
+                result_text += f"## {item.name} ({short_name})\n"
                 result_text += f"• **Average (24h):** ₽{avg_price:,}\n"
                 
                 if low_price and high_price:
@@ -125,7 +130,7 @@ class MarketTools:
                     trend = "📈" if change_48h > 0 else "📉"
                     result_text += f"• **48h Change:** {change_48h:+.1f}% {trend}\n"
                 
-                result_text += f"• **ID:** {item['id']}\n\n"
+                result_text += f"• **ID:** {item.id}\n\n"
             
             return [TextContent(type="text", text=result_text)]
             

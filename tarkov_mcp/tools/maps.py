@@ -5,6 +5,7 @@ from mcp.types import Tool, TextContent
 import logging
 
 from tarkov_mcp.graphql_client import TarkovGraphQLClient
+from tarkov_mcp.schema import Map, parse_map_from_api
 
 logger = logging.getLogger(__name__)
 
@@ -55,33 +56,37 @@ class MapTools:
         """Handle get_maps tool call."""
         try:
             async with TarkovGraphQLClient() as client:
-                maps = await client.get_maps()
+                maps_data = await client.get_maps()
             
-            if not maps:
+            if not maps_data:
                 return [TextContent(
                     type="text",
                     text="No maps found"
                 )]
             
+            # Parse maps using schema
+            maps = [parse_map_from_api(map_data) for map_data in maps_data]
+            
             result_text = f"# Available Maps ({len(maps)} found)\n\n"
             
-            for map_data in maps:
-                name = map_data.get("name", "Unknown")
-                description = map_data.get("description", "")
-                duration = map_data.get("raidDuration", 0)
-                players = map_data.get("players", "Unknown")
-                
-                result_text += f"## {name}\n"
-                if description:
-                    result_text += f"**Description:** {description}\n"
-                if duration > 0:
-                    result_text += f"**Raid Duration:** {duration} minutes\n"
-                if players != "Unknown":
-                    result_text += f"**Players:** {players}\n"
+            for map_obj in maps:
+                result_text += f"## {map_obj.name}\n"
+                if map_obj.description:
+                    result_text += f"**Description:** {map_obj.description}\n"
+                if map_obj.raidDuration and map_obj.raidDuration > 0:
+                    result_text += f"**Raid Duration:** {map_obj.raidDuration} minutes\n"
+                if map_obj.players and map_obj.players != "Unknown":
+                    result_text += f"**Players:** {map_obj.players}\n"
                 
                 # Boss information
-                if map_data.get("bosses"):
-                    result_text += f"**Bosses:** {', '.join([boss.get('name', 'Unknown') for boss in map_data['bosses']])}\n"
+                if map_obj.bosses:
+                    boss_names = []
+                    for boss in map_obj.bosses:
+                        if isinstance(boss, dict):
+                            boss_names.append(boss.get('boss', {}).get('name', 'Unknown'))
+                        else:
+                            boss_names.append(getattr(boss, 'name', 'Unknown'))
+                    result_text += f"**Bosses:** {', '.join(boss_names)}\n"
                 
                 result_text += "\n"
             
@@ -114,19 +119,22 @@ class MapTools:
                     text=f"No map found with name: {map_name}"
                 )]
             
-            result_text = f"# {map_data['name']}\n\n"
+            # Parse map using schema
+            map_obj = parse_map_from_api(map_data)
             
-            if map_data.get("description"):
-                result_text += f"**Description:** {map_data['description']}\n\n"
+            result_text = f"# {map_obj.name}\n\n"
+            
+            if map_obj.description:
+                result_text += f"**Description:** {map_obj.description}\n\n"
             
             # Basic info
             result_text += "## Map Information\n"
-            if map_data.get("raidDuration"):
-                result_text += f"• **Raid Duration:** {map_data['raidDuration']} minutes\n"
-            if map_data.get("players"):
-                result_text += f"• **Players:** {map_data['players']}\n"
-            if map_data.get("enemies"):
-                result_text += f"• **Enemies:** {', '.join(map_data['enemies'])}\n"
+            if map_obj.raidDuration:
+                result_text += f"• **Raid Duration:** {map_obj.raidDuration} minutes\n"
+            if map_obj.players:
+                result_text += f"• **Players:** {map_obj.players}\n"
+            if map_obj.enemies:
+                result_text += f"• **Enemies:** {', '.join(map_obj.enemies)}\n"
             
             # Extracts
             if map_data.get("extracts"):
