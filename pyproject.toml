@@ -44,9 +44,6 @@ test = [
     "pytest-timeout>=2.1.0",
 ]
 
-[project.scripts]
-tarkov-mcp-server = "src.server:main"
-
 [project.urls]
 Homepage = "https://github.com/yourusername/tarkov-mcp-server"
 Repository = "https://github.com/yourusername/tarkov-mcp-server"
@@ -55,7 +52,7 @@ Documentation = "https://github.com/yourusername/tarkov-mcp-server#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["tarkov_mcp*"]
 
 [tool.black]
 line-length = 100
