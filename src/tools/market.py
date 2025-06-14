@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from mcp.types import Tool, TextContent
 import logging
 
-from graphql_client import TarkovGraphQLClient
+from src.graphql_client import TarkovGraphQLClient
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ from gql.transport.aiohttp import AIOHTTPTransport
 import aiohttp
 import logging
 
-from config import config
+from src.config import config
 
 logger = logging.getLogger(__name__)
 
