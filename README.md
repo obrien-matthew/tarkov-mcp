@@ -48,6 +48,8 @@ A Model Context Protocol (MCP) server that provides access to Escape from Tarkov
 
 You can install the dependencies in several ways:
 
+First, clone the repository and navigate into the repository root directory.
+
 **Option 1: Install as a package (recommended)**
 
 ```bash
@@ -68,7 +70,9 @@ pip install -r requirements.txt
 
 ### Claude Desktop Setup
 
-To use this MCP server with Claude Desktop, add the following configuration to your Claude Desktop config file:
+To use this MCP server with Claude Desktop, make sure you've followed the install instructions above.
+
+Add the following configuration to your Claude Desktop config file:
 
 **On macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 **On Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
@@ -79,13 +83,13 @@ To use this MCP server with Claude Desktop, add the following configuration to y
     "tarkov": {
       "command": "python",
       "args": ["-m", "tarkov_mcp"],
-      "cwd": "/path/to/your/tarkov-mcp-server"
+      "cwd": "/path/to/tarkov-mcp"
     }
   }
 }
 ```
 
-Replace `/path/to/your/tarkov-mcp-server` with the actual path to this project directory.
+Replace `/path/to/tarkov-mcp` with the actual path to this project directory.
 
 After updating the config file, restart Claude Desktop for the changes to take effect.
 

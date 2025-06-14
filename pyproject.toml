@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tarkov-mcp-server"
+name = "tarkov-mcp"
 version = "0.1.0"
 description = "Model Context Protocol server for Escape from Tarkov data"
 readme = "README.md"
 license = { text = "GPL-3.0" }
-authors = [{ name = "Tarkov MCP Server" }]
+authors = [{ name = "Matthew O'Brien" }]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -45,10 +45,10 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/tarkov-mcp-server"
-Repository = "https://github.com/yourusername/tarkov-mcp-server"
-Issues = "https://github.com/yourusername/tarkov-mcp-server/issues"
-Documentation = "https://github.com/yourusername/tarkov-mcp-server#readme"
+Homepage = "https://github.com/obrien.matthew/tarkov-mcp"
+Repository = "https://github.com/obrien.matthew/tarkov-mcp"
+Issues = "https://github.com/obrien.matthew/tarkov-mcp/issues"
+Documentation = "https://github.com/obrien.matthew/tarkov-mcp#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]

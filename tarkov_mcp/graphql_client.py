@@ -8,7 +8,7 @@ from gql.transport.aiohttp import AIOHTTPTransport
 import aiohttp
 import logging
 
-from src.config import config
+from tarkov_mcp.config import config
 
 logger = logging.getLogger(__name__)
 
