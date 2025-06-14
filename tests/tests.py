@@ -166,3 +166,146 @@ class TestTarkovGraphQLClient:
                 async with TarkovGraphQLClient() as client:
                     with pytest.raises(Exception, match="Network error"):
                         await client.search_items(name="Test")
+
+    @pytest.mark.asyncio
+    async def test_get_maps_method_exists(self):
+        """Test that get_maps method exists."""
+        from src.graphql_client import TarkovGraphQLClient
+        
+        client = TarkovGraphQLClient()
+        assert hasattr(client, 'get_maps')
+        assert hasattr(client, 'get_map_by_name')
+
+    @pytest.mark.asyncio
+    async def test_get_traders_method_exists(self):
+        """Test that trader methods exist."""
+        from src.graphql_client import TarkovGraphQLClient
+        
+        client = TarkovGraphQLClient()
+        assert hasattr(client, 'get_traders')
+        assert hasattr(client, 'get_trader_by_name')
+        assert hasattr(client, 'get_trader_items')
+
+    @pytest.mark.asyncio
+    async def test_get_quests_method_exists(self):
+        """Test that quest methods exist."""
+        from src.graphql_client import TarkovGraphQLClient
+        
+        client = TarkovGraphQLClient()
+        assert hasattr(client, 'get_quests')
+        assert hasattr(client, 'get_quest_by_id')
+        assert hasattr(client, 'search_quests')
+
+    @pytest.mark.asyncio
+    async def test_get_ammo_data_method_exists(self):
+        """Test that ammo and hideout methods exist."""
+        from src.graphql_client import TarkovGraphQLClient
+        
+        client = TarkovGraphQLClient()
+        assert hasattr(client, 'get_ammo_data')
+        assert hasattr(client, 'get_hideout_modules')
+
+    @pytest.mark.asyncio
+    async def test_maps_query_success(self):
+        """Test maps query with mock response."""
+        mock_response = {
+            "maps": [
+                {
+                    "id": "customs",
+                    "name": "Customs",
+                    "description": "Industrial area",
+                    "raidDuration": 35,
+                    "players": "8-12"
+                }
+            ]
+        }
+        
+        with patch('src.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('src.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_maps()
+                
+                assert len(result) == 1
+                assert result[0]["name"] == "Customs"
+
+    @pytest.mark.asyncio
+    async def test_traders_query_success(self):
+        """Test traders query with mock response."""
+        mock_response = {
+            "traders": [
+                {
+                    "id": "prapor",
+                    "name": "Prapor",
+                    "description": "Military equipment dealer",
+                    "resetTime": 3
+                }
+            ]
+        }
+        
+        with patch('src.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('src.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_traders()
+                
+                assert len(result) == 1
+                assert result[0]["name"] == "Prapor"
+
+    @pytest.mark.asyncio
+    async def test_quests_query_success(self):
+        """Test quests query with mock response."""
+        mock_response = {
+            "tasks": [
+                {
+                    "id": "debut",
+                    "name": "Debut",
+                    "trader": {"name": "Prapor"},
+                    "experience": 1000
+                }
+            ]
+        }
+        
+        with patch('src.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('src.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_quests()
+                
+                assert len(result) == 1
+                assert result[0]["name"] == "Debut"
+
+    @pytest.mark.asyncio
+    async def test_ammo_query_success(self):
+        """Test ammo query with mock response."""
+        mock_response = {
+            "ammo": [
+                {
+                    "item": {"name": "M855A1"},
+                    "caliber": "5.56x45mm",
+                    "damage": 43,
+                    "penetrationPower": 37
+                }
+            ]
+        }
+        
+        with patch('src.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('src.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_ammo_data()
+                
+                assert len(result) == 1
+                assert result[0]["item"]["name"] == "M855A1"
