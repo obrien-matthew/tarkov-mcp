@@ -425,10 +425,35 @@ class MarketTools:
             result_text = f"# Hideout Modules ({len(modules)} found)\n\n"
             
             for module in modules:
-                name = module.get("name", "Unknown")
-                level = module.get("level", 0)
+                result_text += f"## {module.get('name', 'Unknown')}\n"
+                result_text += f"**ID:** {module.get('id', 'N/A')}\n"
+                result_text += f"**Normalized Name:** {module.get('normalizedName', 'N/A')}\n"
                 
-                result_text += f"## {name} (Level {level})\n"
+                if module.get('tarkovDataId'):
+                    result_text += f"**Tarkov Data ID:** {module['tarkovDataId']}\n"
+                
+                levels = module.get('levels', [])
+                if levels:
+                    result_text += f"**Levels:** {len(levels)}\n"
+                    for level in levels[:3]:  # Show first 3 levels
+                        level_num = level.get('level', 'N/A')
+                        construction_time = level.get('constructionTime', 0)
+                        result_text += f"- Level {level_num}: {construction_time // 3600}h {(construction_time % 3600) // 60}m"
+                        
+                        # Show item requirements
+                        item_reqs = level.get('itemRequirements', [])
+                        if item_reqs:
+                            result_text += f" (requires {len(item_reqs)} items)"
+                        
+                        # Show crafts available
+                        crafts = level.get('crafts', [])
+                        if crafts:
+                            result_text += f" ({len(crafts)} crafts)"
+                        
+                        result_text += "\n"
+                
+                if module.get('imageLink'):
+                    result_text += f"**Image:** {module['imageLink']}\n"
                 
                 # Construction requirements
                 if module.get("require"):
@@ -490,3 +515,88 @@ class MarketTools:
                 type="text",
                 text=f"Error getting hideout modules: {str(e)}"
             )]
+
+    async def handle_get_crafts(self, arguments: Dict[str, Any]) -> List[TextContent]:
+        """Handle get_crafts tool call."""
+        limit = arguments.get("limit", 50)
+        station_filter = arguments.get("station")
+        
+        try:
+            async with TarkovGraphQLClient() as client:
+                crafts_data = await client.get_crafts(limit=limit)
+                
+            if not crafts_data:
+                return [TextContent(type="text", text="No crafts found.")]
+            
+            # Filter by station if specified
+            if station_filter:
+                crafts_data = [
+                    craft for craft in crafts_data 
+                    if station_filter.lower() in craft.get('station', {}).get('name', '').lower()
+                ]
+            
+            result_text = f"# Crafting Recipes ({len(crafts_data)} found)\n\n"
+            
+            for craft in crafts_data:
+                station = craft.get('station', {})
+                station_name = station.get('name', 'Unknown Station')
+                level = craft.get('level', 'N/A')
+                duration = craft.get('duration', 0)
+                
+                result_text += f"## {station_name} Level {level}\n"
+                result_text += f"**Duration:** {duration // 3600}h {(duration % 3600) // 60}m {duration % 60}s\n"
+                
+                if craft.get('unlockLevel'):
+                    result_text += f"**Unlock Level:** {craft['unlockLevel']}\n"
+                
+                # Required items
+                required_items = craft.get('requiredItems', [])
+                if required_items:
+                    result_text += "\n**Required Items:**\n"
+                    total_cost = 0
+                    for req_item in required_items:
+                        item = req_item.get('item', {})
+                        count = req_item.get('count', 1)
+                        item_name = item.get('name', 'Unknown Item')
+                        avg_price = item.get('avg24hPrice', 0)
+                        if avg_price:
+                            item_cost = avg_price * count
+                            total_cost += item_cost
+                            result_text += f"- {count}x {item_name} (₽{avg_price:,} each = ₽{item_cost:,})\n"
+                        else:
+                            result_text += f"- {count}x {item_name}\n"
+                    
+                    if total_cost > 0:
+                        result_text += f"**Total Cost:** ₽{total_cost:,}\n"
+                
+                # Reward items
+                reward_items = craft.get('rewardItems', [])
+                if reward_items:
+                    result_text += "\n**Reward Items:**\n"
+                    total_value = 0
+                    for reward_item in reward_items:
+                        item = reward_item.get('item', {})
+                        count = reward_item.get('count', 1)
+                        item_name = item.get('name', 'Unknown Item')
+                        avg_price = item.get('avg24hPrice', 0)
+                        if avg_price:
+                            item_value = avg_price * count
+                            total_value += item_value
+                            result_text += f"- {count}x {item_name} (₽{avg_price:,} each = ₽{item_value:,})\n"
+                        else:
+                            result_text += f"- {count}x {item_name}\n"
+                    
+                    if total_value > 0:
+                        result_text += f"**Total Value:** ₽{total_value:,}\n"
+                        if total_cost > 0:
+                            profit = total_value - total_cost
+                            profit_margin = (profit / total_cost) * 100 if total_cost > 0 else 0
+                            result_text += f"**Profit:** ₽{profit:,} ({profit_margin:+.1f}%)\n"
+                
+                result_text += "\n"
+            
+            return [TextContent(type="text", text=result_text)]
+            
+        except Exception as e:
+            logger.error(f"Error getting crafts: {e}")
+            return [TextContent(type="text", text=f"Error retrieving crafts: {str(e)}")]
