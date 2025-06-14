@@ -5,7 +5,10 @@ from unittest.mock import AsyncMock, patch
 from mcp.types import TextContent                                                                                                                             
                                                                                                                                                               
 from src.tools.items import ItemTools                                                                                                                         
-from src.tools.market import MarketTools                                                                                                                      
+from src.tools.market import MarketTools
+from src.tools.maps import MapTools
+from src.tools.traders import TraderTools
+from src.tools.quests import QuestTools                                                                                                                      
                                                                                                                                                               
 # Set timeout for all async tests to prevent hanging                                                                                                          
 pytestmark = pytest.mark.timeout(30)     
