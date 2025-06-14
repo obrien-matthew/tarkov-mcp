@@ -1,3 +1,7 @@
+# Legacy requirements file - prefer using pyproject.toml
+# Install with: pip install -e .
+# Or with dev dependencies: pip install -e ".[dev]"
+
 mcp>=1.0.0
 gql>=3.4.1
 aiohttp>=3.8.0

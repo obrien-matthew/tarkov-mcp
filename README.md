@@ -48,19 +48,19 @@ A Model Context Protocol (MCP) server that provides access to Escape from Tarkov
 
 You can install the dependencies in several ways:
 
-**Option 2: Install as a package (recommended)**
+**Option 1: Install as a package (recommended)**
 
 ```bash
 pip install -e .
 ```
 
-**Option 3: Install with development dependencies**
+**Option 2: Install with development dependencies**
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-**Option 1: Using requirements.txt**
+**Option 3: Using requirements.txt (legacy)**
 
 ```bash
 pip install -r requirements.txt
