@@ -6,7 +6,7 @@ Based on the GraphQL schema from:
 https://github.com/the-hideout/tarkov-api/blob/8f3e3a866fd83a62bf7981d613fadbcf8c92679f/schema-static.mjs
 """
 
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -27,7 +27,70 @@ class Rarity(Enum):
 
 class ItemSourceName(Enum):
     """Deprecated - use trader instead."""
-    pass  # Values would be defined based on actual API usage
+    PRAPOR = "Prapor"
+    THERAPIST = "Therapist"
+    FENCE = "Fence"
+    SKIER = "Skier"
+    PEACEKEEPER = "Peacekeeper"
+    MECHANIC = "Mechanic"
+    RAGMAN = "Ragman"
+    JAEGER = "Jaeger"
+
+
+class ItemType(Enum):
+    """Item category types."""
+    AMMO = "ammo"
+    ARMOR = "armor"
+    BACKPACK = "backpack"
+    BARTER = "barter"
+    CONTAINER = "container"
+    FOOD_DRINK = "foodDrink"
+    GRENADE = "grenade"
+    HEADPHONES = "headphones"
+    HELMET = "helmet"
+    INJECTORS = "injectors"
+    KEYS = "keys"
+    MEDS = "meds"
+    MODS = "mods"
+    PROVISIONS = "provisions"
+    RIG = "rig"
+    SUPPRESSOR = "suppressor"
+    WEAPON = "weapon"
+
+
+class Currency(Enum):
+    """Game currencies."""
+    RUB = "RUB"
+    USD = "USD"
+    EUR = "EUR"
+
+
+class SkillName(Enum):
+    """Player skills."""
+    ENDURANCE = "Endurance"
+    STRENGTH = "Strength"
+    VITALITY = "Vitality"
+    HEALTH = "Health"
+    STRESS_RESISTANCE = "StressResistance"
+    METABOLISM = "Metabolism"
+    IMMUNITY = "Immunity"
+    PERCEPTION = "Perception"
+    INTELLECT = "Intellect"
+    ATTENTION = "Attention"
+    CHARISMA = "Charisma"
+    MEMORY = "Memory"
+    PISTOL = "Pistol"
+    REVOLVER = "Revolver"
+    SMG = "SMG"
+    ASSAULT_RIFLE = "AssaultRifle"
+    SHOTGUN = "Shotgun"
+    SNIPER_RIFLE = "SniperRifle"
+    LMG = "LMG"
+    HMG = "HMG"
+    LAUNCHER = "Launcher"
+    THROWING = "Throwing"
+    MELEE = "Melee"
+    DMRS = "DMRs"
 
 
 @dataclass
@@ -47,8 +110,125 @@ class Achievement:
 
 
 @dataclass
+class ItemSlot:
+    """Item slot configuration."""
+    id: str
+    name: str
+    name_id: Optional[str] = None
+    filters: Optional[List[Dict[str, Any]]] = None
+    required: Optional[bool] = None
+
+
+@dataclass
+class ItemProperties:
+    """Base class for item-specific properties."""
+    pass
+
+
+@dataclass
+class WeaponProperties(ItemProperties):
+    """Weapon-specific properties."""
+    caliber: Optional[str] = None
+    default_ammo: Optional['Item'] = None
+    effective_distance: Optional[int] = None
+    ergonomics: Optional[int] = None
+    fire_modes: Optional[List[str]] = None
+    fire_rate: Optional[int] = None
+    max_durability: Optional[int] = None
+    default_preset: Optional['Item'] = None
+    presets: Optional[List['Item']] = None
+    slots: Optional[List[ItemSlot]] = None
+    recoil_vertical: Optional[int] = None
+    recoil_horizontal: Optional[int] = None
+    center_of_impact: Optional[float] = None
+    deviations: Optional[Dict[str, float]] = None
+    camera_recoil: Optional[float] = None
+    camera_snap: Optional[float] = None
+    convergence: Optional[float] = None
+
+
+@dataclass
+class ArmorProperties(ItemProperties):
+    """Armor-specific properties."""
+    class_: Optional[int] = None
+    durability: Optional[int] = None
+    material: Optional[ArmorMaterial] = None
+    blunt_throughput: Optional[float] = None
+    zones: Optional[List[str]] = None
+    armor_type: Optional[str] = None
+    ergonomics_penalty: Optional[int] = None
+    speed_penalty: Optional[float] = None
+    turn_penalty: Optional[float] = None
+
+
+@dataclass
+class ContainerProperties(ItemProperties):
+    """Container-specific properties."""
+    capacity: Optional[int] = None
+    grids: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
+class FoodDrinkProperties(ItemProperties):
+    """Food and drink properties."""
+    energy: Optional[int] = None
+    hydration: Optional[int] = None
+    stim_effects: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
+class GrenadeProperties(ItemProperties):
+    """Grenade properties."""
+    type_: Optional[str] = None
+    fuse: Optional[float] = None
+    min_explosion_distance: Optional[int] = None
+    max_explosion_distance: Optional[int] = None
+    fragments: Optional[int] = None
+    contusion_radius: Optional[int] = None
+
+
+@dataclass
+class HelmetProperties(ItemProperties):
+    """Helmet properties."""
+    class_: Optional[int] = None
+    durability: Optional[int] = None
+    material: Optional[ArmorMaterial] = None
+    blunt_throughput: Optional[float] = None
+    zones: Optional[List[str]] = None
+    ergonomics_penalty: Optional[int] = None
+    speed_penalty: Optional[float] = None
+    turn_penalty: Optional[float] = None
+    deafening: Optional[str] = None
+    blocks_headset: Optional[bool] = None
+    slots: Optional[List[ItemSlot]] = None
+
+
+@dataclass
+class KeyProperties(ItemProperties):
+    """Key properties."""
+    uses: Optional[int] = None
+
+
+@dataclass
+class MedicalProperties(ItemProperties):
+    """Medical item properties."""
+    uses: Optional[int] = None
+    use_time: Optional[int] = None
+    cures: Optional[List[str]] = None
+
+
+@dataclass
+class StimulantsProperties(ItemProperties):
+    """Stimulant properties."""
+    uses: Optional[int] = None
+    use_time: Optional[int] = None
+    cures: Optional[List[str]] = None
+    stim_effects: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
 class Item:
-    """Base item type - would be defined elsewhere in full schema."""
+    """Base item type with comprehensive properties."""
     id: str
     name: str
     short_name: Optional[str] = None
@@ -69,6 +249,33 @@ class Item:
     base_image_link: Optional[str] = None
     types: Optional[List[str]] = None
     category: Optional[str] = None
+    # Additional comprehensive fields
+    normalized_name: Optional[str] = None
+    background_color: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    grid_width: Optional[int] = None
+    grid_height: Optional[int] = None
+    sell_for: Optional[List['ItemPrice']] = None
+    buy_for: Optional[List['ItemPrice']] = None
+    contains_items: Optional[List['ContainedItem']] = None
+    used_in_tasks: Optional[List['Task']] = None
+    received_from_tasks: Optional[List['Task']] = None
+    barters_for: Optional[List['Barter']] = None
+    barters_using: Optional[List['Barter']] = None
+    crafts_for: Optional[List['Craft']] = None
+    crafts_using: Optional[List['Craft']] = None
+    fleamarket_fee: Optional[int] = None
+    properties: Optional[ItemProperties] = None
+    conflicting_items: Optional[List['Item']] = None
+    conflicting_slot_ids: Optional[List[str]] = None
+    link: Optional[str] = None
+    accuracy_modifier: Optional[float] = None
+    recoil_modifier: Optional[float] = None
+    ergonomics_modifier: Optional[int] = None
+    has_grid: Optional[bool] = None
+    blocks_headphones: Optional[bool] = None
+    translation: Optional[Dict[str, str]] = None
 
 
 @dataclass
@@ -127,6 +334,30 @@ class AttributeThreshold:
 
 
 @dataclass
+class TraderLevel:
+    """Trader loyalty level information."""
+    level: int
+    required_player_level: int
+    required_reputation: float
+    required_commerce: int
+    pay_rate: float
+    insurance_rate: Optional[float] = None
+    repair_rate: Optional[float] = None
+    standing: Optional[float] = None
+
+
+@dataclass
+class TraderCashOffer:
+    """Trader cash offer information."""
+    item: Item
+    min_trader_level: Optional[int] = None
+    price: Optional[int] = None
+    currency: Optional[str] = None
+    price_rub: Optional[int] = None
+    updated: Optional[str] = None
+
+
+@dataclass
 class Trader:
     """NPC trader information."""
     id: str
@@ -135,9 +366,52 @@ class Trader:
     description: Optional[str] = None
     wiki_link: Optional[str] = None
     image_link: Optional[str] = None
-    levels: Optional[List[dict]] = None
-    currency: Optional[dict] = None
+    levels: Optional[List[TraderLevel]] = None
+    currency: Optional[Item] = None
     reset_time: Optional[str] = None
+    discount: Optional[float] = None
+    repair_currency: Optional[Item] = None
+    insurance: Optional[Dict[str, Any]] = None
+    barters: Optional[List['Barter']] = None
+    cash_offers: Optional[List[TraderCashOffer]] = None
+
+
+@dataclass
+class TaskObjective:
+    """Task objective information."""
+    id: str
+    type_: str
+    description: str
+    maps: Optional[List[str]] = None
+    optional: Optional[bool] = None
+    count: Optional[int] = None
+    found_in_raid: Optional[bool] = None
+    dog_tag_level: Optional[int] = None
+    player_level_min: Optional[int] = None
+    player_level_max: Optional[int] = None
+    target: Optional[List[str]] = None
+    target_item: Optional[Item] = None
+    zones: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
+class TaskRewards:
+    """Task reward information."""
+    experience: Optional[int] = None
+    reputation: Optional[List[Dict[str, Any]]] = None
+    items: Optional[List['ContainedItem']] = None
+    offers: Optional[List[Dict[str, Any]]] = None
+    skill_level_reward: Optional[List[Dict[str, Any]]] = None
+    trader_standing: Optional[List[Dict[str, Any]]] = None
+    trader_unlock: Optional[List[Trader]] = None
+
+
+@dataclass
+class TaskRequirement:
+    """Task requirement information."""
+    level: Optional[int] = None
+    tasks: Optional[List['Task']] = None
+    prerequisite_tasks: Optional[List[List['Task']]] = None
 
 
 @dataclass
@@ -146,15 +420,27 @@ class Task:
     id: str
     name: str
     trader: Optional[Trader] = None
-    map: Optional[str] = None
+    map: Optional['Map'] = None
     experience: Optional[int] = None
     wiki_link: Optional[str] = None
     min_player_level: Optional[int] = None
-    objectives: Optional[List[dict]] = None
-    start_rewards: Optional[dict] = None
-    finish_rewards: Optional[dict] = None
-    fail_conditions: Optional[List[dict]] = None
-    task_requirements: Optional[List[dict]] = None
+    objectives: Optional[List[TaskObjective]] = None
+    start_rewards: Optional[TaskRewards] = None
+    finish_rewards: Optional[TaskRewards] = None
+    fail_conditions: Optional[List[Dict[str, Any]]] = None
+    task_requirements: Optional[List[TaskRequirement]] = None
+    # Additional fields
+    normalized_name: Optional[str] = None
+    fandom_link: Optional[str] = None
+    task_image_link: Optional[str] = None
+    kappaRequired: Optional[bool] = None
+    lightkeeperRequired: Optional[bool] = None
+    restartable: Optional[bool] = None
+    descriptionMessageId: Optional[str] = None
+    startMessageId: Optional[str] = None
+    successMessageId: Optional[str] = None
+    failMessageId: Optional[str] = None
+    note: Optional[str] = None
 
 
 @dataclass
@@ -173,6 +459,20 @@ class PriceRequirement:
 
 
 @dataclass
+class Craft:
+    """Hideout crafting recipe."""
+    id: str
+    station: 'HideoutStation'
+    level: int
+    duration: int
+    required_items: List[ContainedItem]
+    reward_items: List[ContainedItem]
+    source: str  # Deprecated
+    requirements: Optional[List[Dict[str, Any]]] = None
+    unlock_level: Optional[int] = None
+
+
+@dataclass
 class Barter:
     """Trading exchange with NPCs."""
     
@@ -185,7 +485,8 @@ class Barter:
     source: str  # Deprecated - use trader and level instead
     source_name: ItemSourceName  # Deprecated - use trader instead
     requirements: List[PriceRequirement]  # Deprecated - use level instead
-    buy_limit: Optional[int]
+    buy_limit: Optional[int] = None
+    buy_limit_reset_time: Optional[int] = None
 
 
 @dataclass
@@ -245,6 +546,58 @@ class BossSpawn:
 
 
 @dataclass
+class LootContainer:
+    """Loot container information."""
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+
+
+@dataclass
+class MapExtract:
+    """Map extraction point."""
+    id: str
+    name: str
+    faction: Optional[str] = None
+    switches: Optional[List[MapSwitch]] = None
+    position: Optional[Dict[str, float]] = None
+    outline: Optional[List[Dict[str, float]]] = None
+    top: Optional[float] = None
+    bottom: Optional[float] = None
+    left: Optional[float] = None
+    right: Optional[float] = None
+
+
+@dataclass
+class MapHazard:
+    """Map hazard information."""
+    name: str
+    hazard_type: str
+    position: Optional[Dict[str, float]] = None
+    outline: Optional[List[Dict[str, float]]] = None
+    top: Optional[float] = None
+    bottom: Optional[float] = None
+    left: Optional[float] = None
+    right: Optional[float] = None
+
+
+@dataclass
+class MapLoot:
+    """Map loot spawn information."""
+    item: Item
+    positions: Optional[List[Dict[str, float]]] = None
+
+
+@dataclass
+class MapSpawn:
+    """Map spawn point."""
+    position: Dict[str, float]
+    sides: Optional[List[str]] = None
+    categories: Optional[List[str]] = None
+    zoneName: Optional[str] = None
+
+
+@dataclass
 class Map:
     """Game map information."""
     id: str
@@ -257,6 +610,17 @@ class Map:
     players: Optional[str] = None
     bosses: Optional[List[BossSpawn]] = None
     nameId: Optional[str] = None
+    # Additional comprehensive fields
+    tarkov_data_id: Optional[str] = None
+    access_keys: Optional[List[Item]] = None
+    access_keys_min_player_level: Optional[int] = None
+    extracts: Optional[List[MapExtract]] = None
+    hazards: Optional[List[MapHazard]] = None
+    locks: Optional[List[Dict[str, Any]]] = None
+    loot_containers: Optional[List[LootContainer]] = None
+    spawns: Optional[List[MapSpawn]] = None
+    loot: Optional[List[MapLoot]] = None
+    svg: Optional[str] = None
 
 
 # Deprecated types - kept for backwards compatibility
@@ -273,13 +637,28 @@ class HideoutModule:
 
 
 @dataclass
+class HideoutStationLevel:
+    """Hideout station level information."""
+    level: int
+    construction_time: Optional[int] = None
+    description: Optional[str] = None
+    item_requirements: Optional[List[ContainedItem]] = None
+    station_level_requirements: Optional[List[Dict[str, Any]]] = None
+    skill_requirements: Optional[List[Dict[str, Any]]] = None
+    trader_requirements: Optional[List[Dict[str, Any]]] = None
+    crafts: Optional[List[Craft]] = None
+    bonuses: Optional[List[Dict[str, Any]]] = None
+
+
+@dataclass
 class HideoutStation:
     """Hideout station/module information."""
     id: str
     name: str
     normalized_name: Optional[str] = None
     image_link: Optional[str] = None
-    levels: Optional[List[dict]] = None
+    levels: Optional[List[HideoutStationLevel]] = None
+    tarkov_data_id: Optional[int] = None
 
 
 @dataclass
@@ -363,6 +742,68 @@ class FleaMarket:
     currency: str
     price_rub: int
     updated: Optional[str] = None
+    avg24h_price: Optional[int] = None
+    avg7days_price: Optional[int] = None
+    trader_name: Optional[str] = None
+    trader_price: Optional[int] = None
+    trader_price_rub: Optional[int] = None
+
+
+@dataclass
+class Status:
+    """API status information."""
+    name: str
+    message: Optional[str] = None
+    status: Optional[int] = None
+    status_message: Optional[str] = None
+
+
+@dataclass
+class PlayerLevel:
+    """Player level information."""
+    level: int
+    exp: int
+
+
+@dataclass
+class SkillLevel:
+    """Skill level information."""
+    name: str
+    level: float
+
+
+@dataclass
+class HistoricalPricePoint:
+    """Historical price data point."""
+    price: Optional[int] = None
+    price_min: Optional[int] = None
+    timestamp: Optional[str] = None
+
+
+@dataclass
+class Lock:
+    """Lock information."""
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    needs_key: Optional[bool] = None
+    key: Optional[Item] = None
+    pick_strength: Optional[int] = None
+    position: Optional[Dict[str, float]] = None
+    outline: Optional[List[Dict[str, float]]] = None
+    top: Optional[float] = None
+    bottom: Optional[float] = None
+    left: Optional[float] = None
+    right: Optional[float] = None
+
+
+@dataclass
+class Mastering:
+    """Weapon mastering information."""
+    id: str
+    weapons: Optional[List[Item]] = None
+    level2: Optional[int] = None
+    level3: Optional[int] = None
 
 
 # Helper functions for MCP server development
@@ -432,11 +873,14 @@ def parse_task_from_api(data: dict) -> Task:
     trader_data = data.get('trader', {})
     trader = parse_trader_from_api(trader_data) if trader_data else None
     
+    map_data = data.get('map', {})
+    map_obj = parse_map_from_api(map_data) if map_data else None
+    
     return Task(
         id=data.get('id', ''),
         name=data.get('name', ''),
         trader=trader,
-        map=data.get('map'),
+        map=map_obj,
         experience=data.get('experience'),
         wiki_link=data.get('wikiLink'),
         min_player_level=data.get('minPlayerLevel'),
@@ -444,7 +888,18 @@ def parse_task_from_api(data: dict) -> Task:
         start_rewards=data.get('startRewards'),
         finish_rewards=data.get('finishRewards'),
         fail_conditions=data.get('failConditions', []),
-        task_requirements=data.get('taskRequirements', [])
+        task_requirements=data.get('taskRequirements', []),
+        normalized_name=data.get('normalizedName'),
+        fandom_link=data.get('fandomLink'),
+        task_image_link=data.get('taskImageLink'),
+        kappaRequired=data.get('kappaRequired'),
+        lightkeeperRequired=data.get('lightkeeperRequired'),
+        restartable=data.get('restartable'),
+        descriptionMessageId=data.get('descriptionMessageId'),
+        startMessageId=data.get('startMessageId'),
+        successMessageId=data.get('successMessageId'),
+        failMessageId=data.get('failMessageId'),
+        note=data.get('note')
     )
 
 
@@ -460,5 +915,102 @@ def parse_map_from_api(data: dict) -> Map:
         raidDuration=data.get('raidDuration'),
         players=data.get('players'),
         bosses=data.get('bosses', []),
-        nameId=data.get('nameId')
+        nameId=data.get('nameId'),
+        tarkov_data_id=data.get('tarkovDataId'),
+        access_keys=data.get('accessKeys', []),
+        access_keys_min_player_level=data.get('accessKeysMinPlayerLevel'),
+        extracts=data.get('extracts', []),
+        hazards=data.get('hazards', []),
+        locks=data.get('locks', []),
+        loot_containers=data.get('lootContainers', []),
+        spawns=data.get('spawns', []),
+        loot=data.get('loot', []),
+        svg=data.get('svg')
+    )
+
+
+def parse_barter_from_api(data: dict) -> Barter:
+    """Parse Barter from API response data."""
+    trader_data = data.get('trader', {})
+    trader = parse_trader_from_api(trader_data) if trader_data else None
+    
+    task_data = data.get('taskUnlock', {})
+    task = parse_task_from_api(task_data) if task_data else None
+    
+    return Barter(
+        id=data.get('id', ''),
+        trader=trader,
+        level=data.get('level', 0),
+        task_unlock=task,
+        required_items=data.get('requiredItems', []),
+        reward_items=data.get('rewardItems', []),
+        source=data.get('source', ''),
+        source_name=data.get('sourceName'),
+        requirements=data.get('requirements', []),
+        buy_limit=data.get('buyLimit'),
+        buy_limit_reset_time=data.get('buyLimitResetTime')
+    )
+
+
+def parse_craft_from_api(data: dict) -> Craft:
+    """Parse Craft from API response data."""
+    station_data = data.get('station', {})
+    station = HideoutStation(
+        id=station_data.get('id', ''),
+        name=station_data.get('name', ''),
+        normalized_name=station_data.get('normalizedName')
+    ) if station_data else None
+    
+    return Craft(
+        id=data.get('id', ''),
+        station=station,
+        level=data.get('level', 0),
+        duration=data.get('duration', 0),
+        required_items=data.get('requiredItems', []),
+        reward_items=data.get('rewardItems', []),
+        source=data.get('source', ''),
+        requirements=data.get('requirements', []),
+        unlock_level=data.get('unlockLevel')
+    )
+
+
+def parse_ammo_from_api(data: dict) -> Ammo:
+    """Parse Ammo from API response data."""
+    item_data = data.get('item', {})
+    item = parse_item_from_api(item_data) if item_data else Item(id='', name='')
+    
+    return Ammo(
+        item=item,
+        weight=data.get('weight', 0.0),
+        caliber=data.get('caliber'),
+        stack_max_size=data.get('stackMaxSize', 1),
+        tracer=data.get('tracer', False),
+        tracer_color=data.get('tracerColor'),
+        ammo_type=data.get('ammoType', ''),
+        projectile_count=data.get('projectileCount'),
+        damage=data.get('damage', 0),
+        armor_damage=data.get('armorDamage', 0),
+        fragmentation_chance=data.get('fragmentationChance', 0.0),
+        ricochet_chance=data.get('ricochetChance', 0.0),
+        penetration_chance=data.get('penetrationChance', 0.0),
+        penetration_power=data.get('penetrationPower', 0),
+        penetration_power_deviation=data.get('penetrationPowerDeviation'),
+        accuracy_modifier=data.get('accuracyModifier'),
+        recoil_modifier=data.get('recoilModifier'),
+        initial_speed=data.get('initialSpeed'),
+        light_bleed_modifier=data.get('lightBleedModifier', 0.0),
+        heavy_bleed_modifier=data.get('heavyBleedModifier', 0.0),
+        stamina_burn_per_damage=data.get('staminaBurnPerDamage')
+    )
+
+
+def parse_hideout_station_from_api(data: dict) -> HideoutStation:
+    """Parse HideoutStation from API response data."""
+    return HideoutStation(
+        id=data.get('id', ''),
+        name=data.get('name', ''),
+        normalized_name=data.get('normalizedName'),
+        image_link=data.get('imageLink'),
+        levels=data.get('levels', []),
+        tarkov_data_id=data.get('tarkovDataId')
     )
