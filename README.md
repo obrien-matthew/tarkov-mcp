@@ -78,7 +78,7 @@ To use this MCP server with Claude Desktop, add the following configuration to y
   "mcpServers": {
     "tarkov": {
       "command": "python",
-      "args": ["-m", "src.server"],
+      "args": ["-m", "tarkov_mcp"],
       "cwd": "/path/to/your/tarkov-mcp-server"
     }
   }
@@ -100,7 +100,7 @@ pytest tests/ -v
 ### Running the Server
 
 ```bash
-python -m src.server
+python -m tarkov_mcp
 ```
 
 ## Configuration
