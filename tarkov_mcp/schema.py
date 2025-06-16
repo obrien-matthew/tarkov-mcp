@@ -507,7 +507,7 @@ class Task:
 @dataclass
 class ContainedItem:
     """Item with quantity information."""
-    item: Item
+    item: Optional[Item]
     count: int
     quantity: Optional[int] = None
     attributes: Optional[List[dict]] = None
@@ -788,7 +788,7 @@ class TraderResetTime:
 @dataclass
 class ItemPrice:
     """Current item pricing information."""
-    vendor: Trader
+    vendor: Optional[Trader]
     price: int
     currency: str
     price_rub: int
@@ -966,6 +966,134 @@ def is_deprecated_field(field_name: str) -> bool:
     return field_name in deprecated_fields
 
 
+def parse_task_objective_from_api(data: dict) -> TaskObjective:
+    """Parse TaskObjective from API response data."""
+    # Extract map names from map objects
+    maps = []
+    if data.get('maps'):
+        for map_data in data.get('maps', []):
+            if isinstance(map_data, dict):
+                maps.append(map_data.get('name', 'Unknown'))
+            else:
+                maps.append(str(map_data))
+    
+    # Extract target names from target objects
+    target = []
+    if data.get('target'):
+        for target_data in data.get('target', []):
+            if isinstance(target_data, dict):
+                target.append(target_data.get('name', 'Unknown'))
+            else:
+                target.append(str(target_data))
+    
+    return TaskObjective(
+        id=data.get('id', ''),
+        type_=data.get('type', ''),
+        description=data.get('description', ''),
+        maps=maps,
+        optional=data.get('optional'),
+        count=data.get('count'),
+        found_in_raid=data.get('foundInRaid'),
+        dog_tag_level=data.get('dogTagLevel'),
+        player_level_min=data.get('playerLevelMin'),
+        player_level_max=data.get('playerLevelMax'),
+        target=target,
+        target_item=parse_item_from_api(data.get('targetItem', {})) if data.get('targetItem') else None,
+        zones=data.get('zones', [])
+    )
+
+
+def parse_task_requirement_from_api(data: dict) -> TaskRequirement:
+    """Parse TaskRequirement from API response data."""
+    # Note: To avoid circular dependencies, we'll store the raw task data
+    # and parse it later if needed, or use task IDs instead of full objects
+    return TaskRequirement(
+        level=data.get('level'),
+        tasks=None,  # Will be populated later to avoid circular dependencies
+        prerequisite_tasks=None  # Will be populated later to avoid circular dependencies
+    )
+
+
+def parse_task_rewards_from_api(data: dict) -> TaskRewards:
+    """Parse TaskRewards from API response data."""
+    items = []
+    if data.get('items'):
+        items = [parse_contained_item_from_api(item_data) for item_data in data.get('items', [])]
+    
+    trader_unlock = []
+    if data.get('traderUnlock'):
+        trader_unlock = [parse_trader_from_api(trader_data) for trader_data in data.get('traderUnlock', [])]
+    
+    return TaskRewards(
+        experience=data.get('experience'),
+        reputation=data.get('reputation', []),
+        items=items,
+        offers=data.get('offers', []),
+        skill_level_reward=data.get('skillLevelReward', []),
+        trader_standing=data.get('traderStanding', []),
+        trader_unlock=trader_unlock
+    )
+
+
+def parse_item_price_from_api(data: dict) -> ItemPrice:
+    """Parse ItemPrice from API response data."""
+    # Create a minimal vendor object to avoid circular dependencies
+    vendor = None
+    if data.get('vendor'):
+        vendor_data = data.get('vendor', {})
+        vendor = Trader(
+            id=vendor_data.get('id', ''),
+            name=vendor_data.get('name', ''),
+            normalized_name=vendor_data.get('normalizedName'),
+            description=vendor_data.get('description'),
+            wiki_link=vendor_data.get('wikiLink'),
+            image_link=vendor_data.get('imageLink'),
+            levels=None,  # Don't parse levels to avoid circular dependencies
+            currency=None,
+            reset_time=vendor_data.get('resetTime'),
+            discount=vendor_data.get('discount'),
+            repair_currency=None
+        )
+    
+    return ItemPrice(
+        vendor=vendor,
+        price=data.get('price', 0),
+        currency=data.get('currency', 'RUB'),
+        price_rub=data.get('priceRUB', data.get('price', 0)),
+        updated=data.get('updated')
+    )
+
+
+
+
+def parse_trader_level_from_api(data: dict) -> TraderLevel:
+    """Parse TraderLevel from API response data."""
+    return TraderLevel(
+        level=data.get('level', 1),
+        required_player_level=data.get('requiredPlayerLevel', 1),
+        required_reputation=data.get('requiredReputation', 0.0),
+        required_commerce=data.get('requiredCommerce', 0),
+        pay_rate=data.get('payRate', 1.0),
+        insurance_rate=data.get('insuranceRate'),
+        repair_rate=data.get('repairRate'),
+        standing=data.get('standing')
+    )
+
+
+def parse_contained_item_from_api(data: dict) -> ContainedItem:
+    """Parse ContainedItem from API response data."""
+    item = None
+    if data.get('item'):
+        item = parse_item_from_api(data.get('item', {}))
+    
+    return ContainedItem(
+        item=item,
+        count=data.get('count', 1),
+        quantity=data.get('quantity', 1),
+        attributes=data.get('attributes', [])
+    )
+
+
 def parse_item_from_api(data: dict) -> Item:
     """Parse Item from API response data."""
     return Item(
@@ -1003,14 +1131,14 @@ def parse_item_from_api(data: dict) -> Item:
         has_grid=data.get('hasGrid'),
         blocks_headphones=data.get('blocksHeadphones'),
         link=data.get('link'),
-        sell_for=data.get('sellFor', []),
-        buy_for=data.get('buyFor', []),
-        used_in_tasks=data.get('usedInTasks', []),
-        received_from_tasks=data.get('receivedFromTasks', []),
-        barters_for=data.get('bartersFor', []),
-        barters_using=data.get('bartersUsing', []),
-        crafts_for=data.get('craftsFor', []),
-        crafts_using=data.get('craftsUsing', []),
+        sell_for=[parse_item_price_from_api(price) for price in data.get('sellFor', [])],
+        buy_for=[parse_item_price_from_api(price) for price in data.get('buyFor', [])],
+        used_in_tasks=data.get('usedInTasks', []),  # Keep as raw data to avoid circular deps
+        received_from_tasks=data.get('receivedFromTasks', []),  # Keep as raw data to avoid circular deps
+        barters_for=data.get('bartersFor', []),  # Keep as raw data to avoid circular deps
+        barters_using=data.get('bartersUsing', []),  # Keep as raw data to avoid circular deps
+        crafts_for=data.get('craftsFor', []),  # Keep as raw data to avoid circular deps
+        crafts_using=data.get('craftsUsing', []),  # Keep as raw data to avoid circular deps
         properties=data.get('properties')
     )
 
@@ -1030,7 +1158,7 @@ def parse_trader_from_api(data: dict) -> Trader:
         description=data.get('description'),
         wiki_link=data.get('wikiLink'),
         image_link=data.get('imageLink'),
-        levels=data.get('levels', []),
+        levels=[parse_trader_level_from_api(level) for level in data.get('levels', [])],
         currency=currency,
         reset_time=data.get('resetTime'),
         discount=data.get('discount'),
@@ -1055,11 +1183,11 @@ def parse_task_from_api(data: dict) -> Task:
         experience=data.get('experience'),
         wiki_link=data.get('wikiLink'),
         min_player_level=data.get('minPlayerLevel'),
-        objectives=data.get('objectives', []),
-        start_rewards=data.get('startRewards'),
-        finish_rewards=data.get('finishRewards'),
+        objectives=[parse_task_objective_from_api(obj) for obj in data.get('objectives', [])],
+        start_rewards=parse_task_rewards_from_api(data.get('startRewards', {})) if data.get('startRewards') else None,
+        finish_rewards=parse_task_rewards_from_api(data.get('finishRewards', {})) if data.get('finishRewards') else None,
         fail_conditions=data.get('failConditions', []),
-        task_requirements=data.get('taskRequirements', []),
+        task_requirements=[parse_task_requirement_from_api(req) for req in data.get('taskRequirements', [])],
         normalized_name=data.get('normalizedName'),
         fandom_link=data.get('fandomLink'),
         task_image_link=data.get('taskImageLink'),

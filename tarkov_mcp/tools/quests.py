@@ -172,33 +172,28 @@ class QuestTools:
             if quest.task_requirements:
                 result_text += f"## Prerequisites\n"
                 for req in quest.task_requirements:
-                    req_quest = req.get("task", {})
-                    req_name = req_quest.get("name", "Unknown")
-                    result_text += f"• Complete: **{req_name}**\n"
+                    if req.level:
+                        result_text += f"• Level: **{req.level}**\n"
+                    # Note: Task requirements for prerequisite tasks are not fully parsed to avoid circular dependencies
                 result_text += "\n"
             
             # Objectives
             if quest.objectives:
                 result_text += f"## Objectives\n"
                 for i, objective in enumerate(quest.objectives, 1):
-                    obj_description = objective.get("description", "Unknown objective")
-                    result_text += f"{i}. {obj_description}\n"
+                    result_text += f"{i}. {objective.description}\n"
                     
                     # Optional objective details
-                    if objective.get("optional"):
+                    if objective.optional:
                         result_text += "   *(Optional)*\n"
                     
                     # Target details
-                    if objective.get("target"):
-                        targets = objective["target"]
-                        if isinstance(targets, list):
-                            target_names = [t.get("name", "Unknown") for t in targets]
-                            result_text += f"   Targets: {', '.join(target_names)}\n"
+                    if objective.target:
+                        result_text += f"   Targets: {', '.join(objective.target)}\n"
                     
                     # Location details
-                    if objective.get("maps"):
-                        map_names = [m.get("name", "Unknown") for m in objective["maps"]]
-                        result_text += f"   Maps: {', '.join(map_names)}\n"
+                    if objective.maps:
+                        result_text += f"   Maps: {', '.join(objective.maps)}\n"
                 
                 result_text += "\n"
             
@@ -207,34 +202,36 @@ class QuestTools:
                 rewards = quest.finish_rewards
                 result_text += f"## Rewards\n"
                 
+                # Experience
+                if rewards.experience:
+                    result_text += f"### Experience\n"
+                    result_text += f"• {rewards.experience:,} XP\n"
+                
                 # Items
-                if rewards.get("items"):
+                if rewards.items:
                     result_text += f"### Items\n"
-                    for item_reward in rewards["items"]:
-                        item = item_reward.get("item", {})
-                        count = item_reward.get("count", 1)
-                        item_name = item.get("name", "Unknown")
-                        result_text += f"• {count}x {item_name}\n"
+                    for item_reward in rewards.items:
+                        item_name = item_reward.item.name if item_reward.item else "Unknown"
+                        result_text += f"• {item_reward.count}x {item_name}\n"
                 
                 # Trader reputation
-                if rewards.get("traderStanding"):
+                if rewards.trader_standing:
                     result_text += f"### Trader Reputation\n"
-                    for standing in rewards["traderStanding"]:
+                    for standing in rewards.trader_standing:
                         trader_name = standing.get("trader", {}).get("name", "Unknown")
                         standing_value = standing.get("standing", 0)
                         result_text += f"• {trader_name}: {standing_value:+.2f}\n"
                 
                 # Trader unlocks
-                if rewards.get("traderUnlock"):
+                if rewards.trader_unlock:
                     result_text += f"### Trader Unlocks\n"
-                    for unlock in rewards["traderUnlock"]:
-                        trader_name = unlock.get("name", "Unknown")
-                        result_text += f"• Unlocks: {trader_name}\n"
+                    for unlock in rewards.trader_unlock:
+                        result_text += f"• Unlocks: {unlock.name}\n"
                 
                 # Skills
-                if rewards.get("skillLevelReward"):
+                if rewards.skill_level_reward:
                     result_text += f"### Skill Rewards\n"
-                    for skill in rewards["skillLevelReward"]:
+                    for skill in rewards.skill_level_reward:
                         skill_name = skill.get("name", "Unknown")
                         skill_points = skill.get("level", 0)
                         result_text += f"• {skill_name}: +{skill_points} points\n"

@@ -276,40 +276,38 @@ class ItemTools:
             if item.sell_for:
                 result_text += "\n## Sell Prices\n"
                 for price in item.sell_for[:5]:  # Limit to top 5
-                    vendor_name = price.get('vendor', {}).get('name', 'Unknown')
-                    price_val = price.get('priceRUB', price.get('price', 0))
-                    currency = price.get('currency', 'RUB')
+                    vendor_name = price.vendor.name if price.vendor else 'Unknown'
+                    price_val = price.price_rub
+                    currency = price.currency
                     result_text += f"• **{vendor_name}:** ₽{price_val:,} {currency}\n"
             
             if item.buy_for:
                 result_text += "\n## Buy Prices\n"
                 for price in item.buy_for[:5]:  # Limit to top 5
-                    vendor_name = price.get('vendor', {}).get('name', 'Unknown')
-                    price_val = price.get('priceRUB', price.get('price', 0))
-                    currency = price.get('currency', 'RUB')
+                    vendor_name = price.vendor.name if price.vendor else 'Unknown'
+                    price_val = price.price_rub
+                    currency = price.currency
                     result_text += f"• **{vendor_name}:** ₽{price_val:,} {currency}\n"
             
             # Quest usage
             if item.used_in_tasks:
                 result_text += f"\n## Used in Quests\n"
                 for task in item.used_in_tasks[:5]:  # Limit to 5
-                    trader = task.get("trader", {}).get("name", "Unknown")
-                    result_text += f"• **{task['name']}** (from {trader})\n"
+                    trader_name = task.trader.name if task.trader else "Unknown"
+                    result_text += f"• **{task.name}** (from {trader_name})\n"
             
             # Barter and craft usage
             if item.barters_for:
                 result_text += f"\n## Available in Barters ({len(item.barters_for)})\n"
                 for barter in item.barters_for[:3]:  # Show first 3
-                    trader = barter.get("trader", {}).get("name", "Unknown")
-                    level = barter.get("level", "?")
-                    result_text += f"• {trader} Level {level}\n"
+                    trader_name = barter.trader.name if barter.trader else "Unknown"
+                    result_text += f"• {trader_name} Level {barter.level}\n"
             
             if item.crafts_for:
                 result_text += f"\n## Available in Crafts ({len(item.crafts_for)})\n"
                 for craft in item.crafts_for[:3]:  # Show first 3
-                    station = craft.get("station", {}).get("name", "Unknown")
-                    level = craft.get("level", "?")
-                    result_text += f"• {station} Level {level}\n"
+                    station_name = craft.station.name if craft.station else "Unknown"
+                    result_text += f"• {station_name} Level {craft.level}\n"
             
             # Links
             if item.wiki_link:
@@ -436,8 +434,8 @@ class ItemTools:
                 result_text += "### Price per Inventory Slot\n"
                 for item in valid_items:
                     avg_price = item.avg24h_price or 0
-                    width = getattr(item, '_raw_data', {}).get('width', 1)
-                    height = getattr(item, '_raw_data', {}).get('height', 1)
+                    width = item.width or 1
+                    height = item.height or 1
                     slots = width * height
                     price_per_slot = avg_price / slots if slots > 0 else 0
                     
@@ -446,8 +444,8 @@ class ItemTools:
                 # Best value
                 def get_value_ratio(item):
                     avg_price = item.avg24h_price or 0
-                    width = getattr(item, '_raw_data', {}).get('width', 1)
-                    height = getattr(item, '_raw_data', {}).get('height', 1)
+                    width = item.width or 1
+                    height = item.height or 1
                     return avg_price / (width * height)
                 
                 best_value_item = max(valid_items, key=get_value_ratio)

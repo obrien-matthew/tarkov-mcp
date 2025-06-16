@@ -153,21 +153,15 @@ class TraderTools:
             if trader.levels:
                 result_text += f"\n## Loyalty Levels\n"
                 for level in trader.levels:
-                    level_num = level.get("level", 0)
+                    level_num = level.level
                     result_text += f"### Level {level_num}\n"
                     
-                    if level.get("requiredPlayerLevel"):
-                        result_text += f"• **Required Player Level:** {level['requiredPlayerLevel']}\n"
-                    if level.get("requiredReputation"):
-                        result_text += f"• **Required Reputation:** {level['requiredReputation']}\n"
-                    if level.get("requiredCommerce"):
-                        result_text += f"• **Required Commerce:** ₽{level['requiredCommerce']:,}\n"
-                    
-                    # Paywall
-                    if level.get("paywall"):
-                        paywall = level["paywall"]
-                        if paywall.get("level") and paywall.get("level") > 0:
-                            result_text += f"• **Paywall:** Level {paywall['level']}\n"
+                    if level.required_player_level:
+                        result_text += f"• **Required Player Level:** {level.required_player_level}\n"
+                    if level.required_reputation:
+                        result_text += f"• **Required Reputation:** {level.required_reputation}\n"
+                    if level.required_commerce:
+                        result_text += f"• **Required Commerce:** ₽{level.required_commerce:,}\n"
                     
                     result_text += "\n"
             
