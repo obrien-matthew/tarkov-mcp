@@ -90,11 +90,10 @@ class TraderTools:
                 
                 # Currency
                 if trader.currency:
-                    if isinstance(trader.currency, list):
-                        currencies = [curr.get("name", "Unknown") for curr in trader.currency]
-                        result_text += f"**Accepts:** {', '.join(currencies)}\n"
-                    elif isinstance(trader.currency, dict):
-                        result_text += f"**Accepts:** {trader.currency.get('name', 'Unknown')}\n"
+                    if hasattr(trader.currency, 'name'):
+                        result_text += f"**Accepts:** {trader.currency.name}\n"
+                    else:
+                        result_text += f"**Accepts:** Unknown\n"
                 
                 result_text += "\n"
             
@@ -145,11 +144,10 @@ class TraderTools:
             
             # Currency accepted
             if trader.currency:
-                if isinstance(trader.currency, list):
-                    currencies = [curr.get("name", "Unknown") for curr in trader.currency]
-                    result_text += f"• **Accepts:** {', '.join(currencies)}\n"
-                elif isinstance(trader.currency, dict):
-                    result_text += f"• **Accepts:** {trader.currency.get('name', 'Unknown')}\n"
+                if hasattr(trader.currency, 'name'):
+                    result_text += f"• **Accepts:** {trader.currency.name}\n"
+                else:
+                    result_text += f"• **Accepts:** Unknown\n"
             
             # Levels and requirements
             if trader.levels:
@@ -174,8 +172,9 @@ class TraderTools:
                     result_text += "\n"
             
             # Insurance
-            if trader.get("insurance"):
-                insurance = trader["insurance"]
+            insurance_data = trader_data.get("insurance")
+            if insurance_data:
+                insurance = insurance_data
                 result_text += f"## Insurance\n"
                 result_text += f"• **Available:** {'Yes' if insurance.get('availableOnMap') else 'No'}\n"
                 if insurance.get("minReturnHour"):
@@ -186,8 +185,9 @@ class TraderTools:
                     result_text += f"• **Storage Time:** {insurance['maxStorageTime']} hours\n"
             
             # Repair services
-            if trader.get("repair"):
-                repair = trader["repair"]
+            repair_data = trader_data.get("repair")
+            if repair_data:
+                repair = repair_data
                 result_text += f"\n## Repair Services\n"
                 result_text += f"• **Available:** {'Yes' if repair.get('availability') else 'No'}\n"
                 if repair.get("priceModifier"):

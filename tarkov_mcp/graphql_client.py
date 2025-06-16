@@ -92,11 +92,11 @@ class TarkovGraphQLClient:
             logger.error(f"GraphQL query failed: {e}. Query variables: {variables}")
             raise
     
-    async def search_items(self, name: Optional[str] = None, item_type: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    async def search_items(self, name: Optional[str] = None, item_type: Optional[str] = None, limit: int = 50, lang: str = "en") -> List[Dict[str, Any]]:
         """Search for items by name or type."""
         query = """
-        query SearchItems($name: String, $type: String, $limit: Int) {
-            items(name: $name, type: $type, limit: $limit) {
+        query SearchItems($name: String, $type: String, $limit: Int, $lang: LanguageCode) {
+            items(name: $name, type: $type, limit: $limit, lang: $lang) {
                 id
                 name
                 shortName
@@ -113,14 +113,33 @@ class TarkovGraphQLClient:
                 imageLink
                 gridImageLink
                 baseImageLink
+                inspectImageLink
+                image512pxLink
+                image8xLink
                 backgroundColor
                 types
-                category
+                category {
+                    id
+                    name
+                    normalizedName
+                }
+                categories {
+                    id
+                    name
+                    normalizedName
+                }
+                bsgCategoryId
+                handbookCategories {
+                    id
+                    name
+                    normalizedName
+                }
                 updated
                 avg24hPrice
                 low24hPrice
                 high24hPrice
                 lastLowPrice
+                lastOfferCount
                 changeLast48h
                 changeLast48hPercent
                 fleaMarketFee
@@ -130,8 +149,10 @@ class TarkovGraphQLClient:
                 hasGrid
                 blocksHeadphones
                 link
+                velocity
+                loudness
                 properties {
-                    ... on WeaponProperties {
+                    ... on ItemPropertiesWeapon {
                         caliber
                         effectiveDistance
                         ergonomics
@@ -141,17 +162,39 @@ class TarkovGraphQLClient:
                         recoilVertical
                         recoilHorizontal
                         centerOfImpact
+                        deviationCurve
+                        deviationMax
+                        recoilDispersion
+                        recoilAngle
                         cameraRecoil
                         cameraSnap
                         convergence
+                        defaultWidth
+                        defaultHeight
+                        defaultErgonomics
+                        defaultWeight
+                        defaultRecoilVertical
+                        defaultRecoilHorizontal
+                        allowedAmmo {
+                            item {
+                                id
+                                name
+                                shortName
+                            }
+                        }
                     }
-                    ... on ArmorProperties {
+                    ... on ItemPropertiesArmor {
                         class
                         durability
                         material {
                             id
                             name
                             destructibility
+                            minRepairDegradation
+                            maxRepairDegradation
+                            explosionDestructibility
+                            minRepairKitDegradation
+                            maxRepairKitDegradation
                         }
                         bluntThroughput
                         zones
@@ -160,7 +203,7 @@ class TarkovGraphQLClient:
                         speedPenalty
                         turnPenalty
                     }
-                    ... on HelmetProperties {
+                    ... on ItemPropertiesHelmet {
                         class
                         durability
                         material {
@@ -176,14 +219,27 @@ class TarkovGraphQLClient:
                         deafening
                         blocksHeadset
                     }
-                    ... on ContainerProperties {
+                    ... on ItemPropertiesContainer {
                         capacity
+                        grids {
+                            width
+                            height
+                        }
                     }
-                    ... on FoodDrinkProperties {
+                    ... on ItemPropertiesFoodDrink {
                         energy
                         hydration
+                        stimEffects {
+                            type
+                            chance
+                            delay
+                            duration
+                            value
+                            percent
+                            skillName
+                        }
                     }
-                    ... on GrenadeProperties {
+                    ... on ItemPropertiesGrenade {
                         type
                         fuse
                         minExplosionDistance
@@ -191,18 +247,87 @@ class TarkovGraphQLClient:
                         fragments
                         contusionRadius
                     }
-                    ... on KeyProperties {
+                    ... on ItemPropertiesKey {
                         uses
                     }
-                    ... on MedicalProperties {
+                    ... on ItemPropertiesMedicalItem {
                         uses
                         useTime
                         cures
+                        healthEffects {
+                            bodyParts
+                            effects {
+                                type
+                                value
+                                duration
+                                delay
+                            }
+                        }
                     }
-                    ... on StimulantsProperties {
+                    ... on ItemPropertiesStim {
                         uses
                         useTime
                         cures
+                        stimEffects {
+                            type
+                            chance
+                            delay
+                            duration
+                            value
+                            percent
+                            skillName
+                        }
+                    }
+                    ... on ItemPropertiesAmmo {
+                        caliber
+                        stackMaxSize
+                        tracer
+                        tracerColor
+                        ammoType
+                        projectileCount
+                        damage
+                        armorDamage
+                        fragmentationChance
+                        ricochetChance
+                        penetrationChance
+                        penetrationPower
+                        penetrationPowerDeviation
+                        accuracyModifier
+                        recoilModifier
+                        initialSpeed
+                        lightBleedModifier
+                        heavyBleedModifier
+                        staminaBurnPerDamage
+                    }
+                    ... on ItemPropertiesBackpack {
+                        capacity
+                        grids {
+                            width
+                            height
+                        }
+                        penalties {
+                            speed
+                            mouse
+                            deafness
+                        }
+                    }
+                    ... on ItemPropertiesChestRig {
+                        class
+                        durability
+                        capacity
+                        grids {
+                            width
+                            height
+                        }
+                        material {
+                            id
+                            name
+                        }
+                        zones
+                        armorType
+                        ergonomicsPenalty
+                        speedPenalty
+                        turnPenalty
                     }
                 }
                 sellFor {
@@ -229,7 +354,7 @@ class TarkovGraphQLClient:
         }
         """
         
-        variables = {"limit": limit}
+        variables = {"limit": limit, "lang": lang}
         if name:
             variables["name"] = name
         if item_type:
@@ -1024,3 +1149,70 @@ class TarkovGraphQLClient:
         variables = {"limit": limit}
         result = await self.execute_query(query, variables)
         return result.get("crafts", [])
+
+    async def get_quest_items(self, limit: int = 50, lang: str = "en") -> List[Dict[str, Any]]:
+        """Get quest-specific items."""
+        query = """
+        query GetQuestItems($limit: Int, $lang: LanguageCode) {
+            questItems(limit: $limit, lang: $lang) {
+                id
+                name
+                shortName
+                description
+                basePrice
+                width
+                height
+                iconLink
+                imageLink
+                inspectImageLink
+                image512pxLink
+                image8xLink
+                gridImageLink
+                wikiLink
+                usedInTasks {
+                    id
+                    name
+                    trader {
+                        name
+                    }
+                    minPlayerLevel
+                    experience
+                }
+                receivedFromTasks {
+                    id
+                    name
+                    trader {
+                        name
+                    }
+                    minPlayerLevel
+                    experience
+                }
+            }
+        }
+        """
+        
+        variables = {"limit": limit, "lang": lang}
+        result = await self.execute_query(query, variables)
+        return result.get("questItems", [])
+
+    async def get_goon_reports(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Get recent goon squad sighting reports."""
+        query = """
+        query GetGoonReports($limit: Int) {
+            goonReports(limit: $limit) {
+                id
+                map {
+                    id
+                    name
+                }
+                timestamp
+                location
+                spottedBy
+                verified
+            }
+        }
+        """
+        
+        variables = {"limit": limit}
+        result = await self.execute_query(query, variables)
+        return result.get("goonReports", [])

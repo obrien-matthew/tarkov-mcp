@@ -16,6 +16,7 @@ from tarkov_mcp.tools.market import MarketTools
 from tarkov_mcp.tools.maps import MapTools
 from tarkov_mcp.tools.traders import TraderTools
 from tarkov_mcp.tools.quests import QuestTools
+from tarkov_mcp.tools.community import CommunityTools
 
 # Configure logging
 from tarkov_mcp.config import config
@@ -35,6 +36,7 @@ class TarkovMCPServer:
         self.map_tools = MapTools()
         self.trader_tools = TraderTools()
         self.quest_tools = QuestTools()
+        self.community_tools = CommunityTools()
         
         # Combine all tools
         self.all_tools = (
@@ -42,7 +44,8 @@ class TarkovMCPServer:
             self.market_tools.tools + 
             self.map_tools.tools + 
             self.trader_tools.tools + 
-            self.quest_tools.tools
+            self.quest_tools.tools +
+            self.community_tools.tools
         )
         
         # Register handlers
@@ -101,6 +104,10 @@ class TarkovMCPServer:
                     return await self.quest_tools.handle_get_quest_details(arguments)
                 elif name == "search_quests":
                     return await self.quest_tools.handle_search_quests(arguments)
+                elif name == "get_quest_items":
+                    return await self.item_tools.handle_get_quest_items(arguments)
+                elif name == "get_goon_reports":
+                    return await self.community_tools.handle_get_goon_reports(arguments)
                 else:
                     return [TextContent(
                         type="text",

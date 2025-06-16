@@ -3,7 +3,7 @@
 import pytest                                                                                                                                                 
 import asyncio                                                                                                                                                
 from unittest.mock import AsyncMock, patch, MagicMock                                                                                                         
-from src.graphql_client import TarkovGraphQLClient, RateLimiter                                                                                               
+from tarkov_mcp.graphql_client import TarkovGraphQLClient, RateLimiter                                                                                               
                                                                                                                                                               
 # Set timeout for all async tests to prevent hanging                                                                                                          
 pytestmark = pytest.mark.timeout(30) 
@@ -61,12 +61,12 @@ class TestTarkovGraphQLClient:
     @pytest.mark.asyncio
     async def test_search_items_success(self, mock_client_response):
         """Test successful item search."""
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_client_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.search_items(name="Test")
                 
@@ -87,12 +87,12 @@ class TestTarkovGraphQLClient:
             }
         }
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_item_by_id("test-id")
 
@@ -105,12 +105,12 @@ class TestTarkovGraphQLClient:
         """Test item not found scenario."""
         mock_response = {"item": None}
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_item_by_id("nonexistent")
                 
@@ -141,12 +141,12 @@ class TestTarkovGraphQLClient:
             ]
         }
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_barters(limit=10)
                 
@@ -157,12 +157,12 @@ class TestTarkovGraphQLClient:
     @pytest.mark.asyncio
     async def test_client_error_handling(self):
         """Test client error handling."""
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.side_effect = Exception("Network error")
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     with pytest.raises(Exception, match="Network error"):
                         await client.search_items(name="Test")
@@ -170,7 +170,7 @@ class TestTarkovGraphQLClient:
     @pytest.mark.asyncio
     async def test_get_maps_method_exists(self):
         """Test that get_maps method exists."""
-        from src.graphql_client import TarkovGraphQLClient
+        from tarkov_mcp.graphql_client import TarkovGraphQLClient
         
         client = TarkovGraphQLClient()
         assert hasattr(client, 'get_maps')
@@ -179,7 +179,7 @@ class TestTarkovGraphQLClient:
     @pytest.mark.asyncio
     async def test_get_traders_method_exists(self):
         """Test that trader methods exist."""
-        from src.graphql_client import TarkovGraphQLClient
+        from tarkov_mcp.graphql_client import TarkovGraphQLClient
         
         client = TarkovGraphQLClient()
         assert hasattr(client, 'get_traders')
@@ -189,7 +189,7 @@ class TestTarkovGraphQLClient:
     @pytest.mark.asyncio
     async def test_get_quests_method_exists(self):
         """Test that quest methods exist."""
-        from src.graphql_client import TarkovGraphQLClient
+        from tarkov_mcp.graphql_client import TarkovGraphQLClient
         
         client = TarkovGraphQLClient()
         assert hasattr(client, 'get_quests')
@@ -199,7 +199,7 @@ class TestTarkovGraphQLClient:
     @pytest.mark.asyncio
     async def test_get_ammo_data_method_exists(self):
         """Test that ammo and hideout methods exist."""
-        from src.graphql_client import TarkovGraphQLClient
+        from tarkov_mcp.graphql_client import TarkovGraphQLClient
         
         client = TarkovGraphQLClient()
         assert hasattr(client, 'get_ammo_data')
@@ -220,12 +220,12 @@ class TestTarkovGraphQLClient:
             ]
         }
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_maps()
                 
@@ -246,12 +246,12 @@ class TestTarkovGraphQLClient:
             ]
         }
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_traders()
                 
@@ -272,12 +272,12 @@ class TestTarkovGraphQLClient:
             ]
         }
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_quests()
                 
@@ -298,14 +298,141 @@ class TestTarkovGraphQLClient:
             ]
         }
         
-        with patch('src.graphql_client.Client') as mock_client_class:
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.execute_async.return_value = mock_response
             mock_client_class.return_value = mock_client
             
-            with patch('src.graphql_client.aiohttp.ClientSession'):
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
                 async with TarkovGraphQLClient() as client:
                     result = await client.get_ammo_data()
                 
                 assert len(result) == 1
                 assert result[0]["item"]["name"] == "M855A1"
+
+    @pytest.mark.asyncio
+    async def test_search_items_with_language(self):
+        """Test search items with language parameter."""
+        mock_response = {
+            "items": [
+                {
+                    "id": "test-id-1",
+                    "name": "Test Item",
+                    "shortName": "TI",
+                    "avg24hPrice": 10000,
+                    "types": ["weapon"]
+                }
+            ]
+        }
+        
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.search_items(name="Test", lang="ru")
+                
+                assert len(result) == 1
+                assert result[0]["name"] == "Test Item"
+                # Verify the language parameter was used in the query
+                mock_client.execute_async.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_get_quest_items_success(self):
+        """Test successful quest items retrieval."""
+        mock_response = {
+            "questItems": [
+                {
+                    "id": "quest-item-1",
+                    "name": "Factory key",
+                    "shortName": "Factory",
+                    "usedInTasks": [
+                        {"id": "task1", "name": "Debut"}
+                    ]
+                }
+            ]
+        }
+        
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_quest_items(limit=50)
+                
+                assert len(result) == 1
+                assert result[0]["name"] == "Factory key"
+
+    @pytest.mark.asyncio
+    async def test_get_goon_reports_success(self):
+        """Test successful goon reports retrieval."""
+        mock_response = {
+            "goonReports": [
+                {
+                    "id": "report-1",
+                    "map": {"name": "Customs"},
+                    "timestamp": "2024-01-15T10:30:00Z",
+                    "location": "Gas Station",
+                    "verified": True
+                }
+            ]
+        }
+        
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_goon_reports(limit=10)
+                
+                assert len(result) == 1
+                assert result[0]["map"]["name"] == "Customs"
+                assert result[0]["verified"] is True
+
+    @pytest.mark.asyncio
+    async def test_get_crafts_method_exists(self):
+        """Test that get_crafts method exists."""
+        from tarkov_mcp.graphql_client import TarkovGraphQLClient
+        
+        client = TarkovGraphQLClient()
+        assert hasattr(client, 'get_crafts')
+        assert hasattr(client, 'get_quest_items')
+        assert hasattr(client, 'get_goon_reports')
+
+    @pytest.mark.asyncio
+    async def test_crafts_query_success(self):
+        """Test crafts query with mock response."""
+        mock_response = {
+            "crafts": [
+                {
+                    "id": "craft-1",
+                    "station": {"name": "Workbench"},
+                    "level": 1,
+                    "duration": 3600,
+                    "requiredItems": [
+                        {"item": {"name": "Screws"}, "count": 5}
+                    ],
+                    "rewardItems": [
+                        {"item": {"name": "Magazine"}, "count": 1}
+                    ]
+                }
+            ]
+        }
+        
+        with patch('tarkov_mcp.graphql_client.Client') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.execute_async.return_value = mock_response
+            mock_client_class.return_value = mock_client
+            
+            with patch('tarkov_mcp.graphql_client.aiohttp.ClientSession'):
+                async with TarkovGraphQLClient() as client:
+                    result = await client.get_crafts()
+                
+                assert len(result) == 1
+                assert result[0]["station"]["name"] == "Workbench"

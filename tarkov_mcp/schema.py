@@ -93,6 +93,56 @@ class SkillName(Enum):
     DMRS = "DMRs"
 
 
+class LanguageCode(Enum):
+    """Supported language codes for localization."""
+    EN = "en"
+    RU = "ru"
+    DE = "de"
+    FR = "fr"
+    ES = "es"
+    CS = "cs"
+    HU = "hu"
+    TR = "tr"
+    IT = "it"
+    PL = "pl"
+    PT = "pt"
+    SK = "sk"
+    JP = "ja"
+    CN = "zh"
+    KO = "ko"
+    NO = "no"
+
+
+class GameMode(Enum):
+    """Game mode types."""
+    REGULAR = "regular"
+    PVE = "pve"
+
+
+class TraderName(Enum):
+    """Standardized trader names."""
+    PRAPOR = "Prapor"
+    THERAPIST = "Therapist"
+    FENCE = "Fence"
+    SKIER = "Skier"
+    PEACEKEEPER = "Peacekeeper"
+    MECHANIC = "Mechanic"
+    RAGMAN = "Ragman"
+    JAEGER = "Jaeger"
+    LIGHTKEEPER = "Lightkeeper"
+    REF = "Ref"
+
+
+class RequirementType(Enum):
+    """Requirement types for tasks and other systems."""
+    LEVEL = "level"
+    SKILL = "skill"
+    TASK = "task"
+    TRADER = "trader"
+    ITEM = "item"
+    HIDEOUT_STATION = "hideoutStation"
+
+
 @dataclass
 class Achievement:
     """In-game achievements players can earn by completing specific objectives."""
@@ -147,6 +197,20 @@ class WeaponProperties(ItemProperties):
     camera_recoil: Optional[float] = None
     camera_snap: Optional[float] = None
     convergence: Optional[float] = None
+
+
+@dataclass
+class ArmorMaterial:
+    """Material properties for armor items."""
+    
+    id: Optional[str]
+    name: Optional[str]
+    destructibility: Optional[float]
+    min_repair_degradation: Optional[float]
+    max_repair_degradation: Optional[float]
+    explosion_destructibility: Optional[float]
+    min_repair_kit_degradation: Optional[float]
+    max_repair_kit_degradation: Optional[float]
 
 
 @dataclass
@@ -241,6 +305,7 @@ class Item:
     low24h_price: Optional[int] = None
     high24h_price: Optional[int] = None
     last_low_price: Optional[int] = None
+    last_offer_count: Optional[int] = None
     change_last48h: Optional[float] = None
     change_last48h_percent: Optional[float] = None
     updated: Optional[str] = None
@@ -249,8 +314,14 @@ class Item:
     image_link: Optional[str] = None
     grid_image_link: Optional[str] = None
     base_image_link: Optional[str] = None
+    inspect_image_link: Optional[str] = None
+    image_512px_link: Optional[str] = None
+    image_8x_link: Optional[str] = None
     types: Optional[List[str]] = None
-    category: Optional[str] = None
+    category: Optional[Union[str, 'ItemCategory']] = None  # Can be string (legacy) or ItemCategory object
+    categories: Optional[List['ItemCategory']] = None
+    bsg_category_id: Optional[str] = None
+    handbook_categories: Optional[List['HandbookCategory']] = None
     # Additional comprehensive fields
     normalized_name: Optional[str] = None
     background_color: Optional[str] = None
@@ -277,6 +348,8 @@ class Item:
     ergonomics_modifier: Optional[int] = None
     has_grid: Optional[bool] = None
     blocks_headphones: Optional[bool] = None
+    velocity: Optional[float] = None
+    loudness: Optional[float] = None
     translation: Optional[Dict[str, str]] = None
 
 
@@ -305,20 +378,6 @@ class Ammo:
     light_bleed_modifier: float
     heavy_bleed_modifier: float
     stamina_burn_per_damage: Optional[float]
-
-
-@dataclass
-class ArmorMaterial:
-    """Material properties for armor items."""
-    
-    id: Optional[str]
-    name: Optional[str]
-    destructibility: Optional[float]
-    min_repair_degradation: Optional[float]
-    max_repair_degradation: Optional[float]
-    explosion_destructibility: Optional[float]
-    min_repair_kit_degradation: Optional[float]
-    max_repair_kit_degradation: Optional[float]
 
 
 @dataclass
@@ -808,6 +867,84 @@ class Mastering:
     level3: Optional[int] = None
 
 
+@dataclass
+class QuestItem:
+    """Quest-specific items with enhanced metadata."""
+    id: str
+    name: str
+    short_name: Optional[str] = None
+    description: Optional[str] = None
+    base_price: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    icon_link: Optional[str] = None
+    image_link: Optional[str] = None
+    inspect_image_link: Optional[str] = None
+    image_512px_link: Optional[str] = None
+    image_8x_link: Optional[str] = None
+    grid_image_link: Optional[str] = None
+    wiki_link: Optional[str] = None
+    used_in_tasks: Optional[List[Task]] = None
+    received_from_tasks: Optional[List[Task]] = None
+
+
+@dataclass
+class GoonReport:
+    """Community-driven goon squad sighting report."""
+    id: str
+    map: Optional['Map'] = None
+    timestamp: Optional[str] = None
+    location: Optional[str] = None
+    spotted_by: Optional[str] = None
+    verified: Optional[bool] = None
+
+
+@dataclass
+class HealthEffect:
+    """Health effect information for medical items."""
+    type: str
+    value: Optional[float] = None
+    duration: Optional[int] = None
+    delay: Optional[int] = None
+
+
+@dataclass
+class HealthPart:
+    """Body part health information."""
+    body_parts: List[str]
+    effects: List[HealthEffect]
+
+
+@dataclass
+class StimEffect:
+    """Stimulant effect information."""
+    type: str
+    chance: Optional[float] = None
+    delay: Optional[int] = None
+    duration: Optional[int] = None
+    value: Optional[float] = None
+    percent: Optional[bool] = None
+    skill_name: Optional[str] = None
+
+
+@dataclass
+class ItemCategory:
+    """Enhanced item category with proper object structure."""
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    parent: Optional['ItemCategory'] = None
+
+
+@dataclass
+class HandbookCategory:
+    """In-game handbook category."""
+    id: str
+    name: str
+    normalized_name: Optional[str] = None
+    parent: Optional['HandbookCategory'] = None
+
+
 # Helper functions for MCP server development
 
 def normalize_side(side: str) -> str:
@@ -851,12 +988,41 @@ def parse_item_from_api(data: dict) -> Item:
         grid_image_link=data.get('gridImageLink'),
         base_image_link=data.get('baseImageLink'),
         types=data.get('types', []),
-        category=data.get('category')
+        category=data.get('category'),
+        # Additional comprehensive fields
+        normalized_name=data.get('normalizedName'),
+        background_color=data.get('backgroundColor'),
+        width=data.get('width'),
+        height=data.get('height'),
+        grid_width=data.get('gridWidth'),
+        grid_height=data.get('gridHeight'),
+        fleamarket_fee=data.get('fleaMarketFee'),
+        accuracy_modifier=data.get('accuracyModifier'),
+        recoil_modifier=data.get('recoilModifier'),
+        ergonomics_modifier=data.get('ergonomicsModifier'),
+        has_grid=data.get('hasGrid'),
+        blocks_headphones=data.get('blocksHeadphones'),
+        link=data.get('link'),
+        sell_for=data.get('sellFor', []),
+        buy_for=data.get('buyFor', []),
+        used_in_tasks=data.get('usedInTasks', []),
+        received_from_tasks=data.get('receivedFromTasks', []),
+        barters_for=data.get('bartersFor', []),
+        barters_using=data.get('bartersUsing', []),
+        crafts_for=data.get('craftsFor', []),
+        crafts_using=data.get('craftsUsing', []),
+        properties=data.get('properties')
     )
 
 
 def parse_trader_from_api(data: dict) -> Trader:
     """Parse Trader from API response data."""
+    currency_data = data.get('currency', {})
+    currency = parse_item_from_api(currency_data) if currency_data else None
+    
+    repair_currency_data = data.get('repairCurrency', {})
+    repair_currency = parse_item_from_api(repair_currency_data) if repair_currency_data else None
+    
     return Trader(
         id=data.get('id', ''),
         name=data.get('name', ''),
@@ -865,8 +1031,11 @@ def parse_trader_from_api(data: dict) -> Trader:
         wiki_link=data.get('wikiLink'),
         image_link=data.get('imageLink'),
         levels=data.get('levels', []),
-        currency=data.get('currency'),
-        reset_time=data.get('resetTime')
+        currency=currency,
+        reset_time=data.get('resetTime'),
+        discount=data.get('discount'),
+        repair_currency=repair_currency,
+        cash_offers=data.get('cashOffers', [])
     )
 
 

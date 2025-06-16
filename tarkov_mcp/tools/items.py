@@ -34,6 +34,11 @@ class ItemTools:
                             "default": 20,
                             "minimum": 1,
                             "maximum": 100
+                        },
+                        "language": {
+                            "type": "string",
+                            "description": "Language code for localized results (en, ru, de, fr, es, etc.)",
+                            "default": "en"
                         }
                     }
                 }
@@ -81,6 +86,27 @@ class ItemTools:
                     },
                     "required": ["item_ids"]
                 }
+            ),
+            Tool(
+                name="get_quest_items",
+                description="Get quest-specific items with their associated tasks",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of quest items to return",
+                            "default": 50,
+                            "minimum": 1,
+                            "maximum": 200
+                        },
+                        "language": {
+                            "type": "string",
+                            "description": "Language code for localized results",
+                            "default": "en"
+                        }
+                    }
+                }
             )
         ]
     
@@ -89,6 +115,7 @@ class ItemTools:
         name = arguments.get("name")
         item_type = arguments.get("item_type")
         limit = arguments.get("limit", 20)
+        language = arguments.get("language", "en")
         
         if not name and not item_type:
             return [TextContent(
@@ -98,7 +125,7 @@ class ItemTools:
         
         try:
             async with TarkovGraphQLClient() as client:
-                items_data = await client.search_items(name=name, item_type=item_type, limit=limit)
+                items_data = await client.search_items(name=name, item_type=item_type, limit=limit, lang=language)
             
             if not items_data:
                 return [TextContent(
@@ -433,4 +460,76 @@ class ItemTools:
             return [TextContent(
                 type="text",
                 text=f"Error comparing items: {str(e)}"
+            )]
+
+    async def handle_get_quest_items(self, arguments: Dict[str, Any]) -> List[TextContent]:
+        """Handle get_quest_items tool call."""
+        limit = arguments.get("limit", 50)
+        language = arguments.get("language", "en")
+        
+        try:
+            async with TarkovGraphQLClient() as client:
+                quest_items_data = await client.get_quest_items(limit=limit, lang=language)
+            
+            if not quest_items_data:
+                return [TextContent(
+                    type="text",
+                    text="No quest items found"
+                )]
+            
+            result_text = f"# Quest Items ({len(quest_items_data)} found)\n\n"
+            
+            for item in quest_items_data:
+                result_text += f"## {item.get('name', 'Unknown Item')}\n"
+                
+                if item.get('shortName'):
+                    result_text += f"**Short Name:** {item['shortName']}\n"
+                
+                if item.get('description'):
+                    result_text += f"**Description:** {item['description']}\n"
+                
+                # Size and price info
+                width = item.get('width', 1)
+                height = item.get('height', 1)
+                base_price = item.get('basePrice', 0)
+                result_text += f"**Size:** {width}x{height} slots\n"
+                result_text += f"**Base Price:** ₽{base_price:,}\n"
+                
+                # Quest usage
+                used_in = item.get('usedInTasks', [])
+                received_from = item.get('receivedFromTasks', [])
+                
+                if used_in:
+                    result_text += f"\n**Used in Quests ({len(used_in)}):**\n"
+                    for task in used_in[:5]:  # Limit to 5
+                        trader_name = task.get('trader', {}).get('name', 'Unknown')
+                        min_level = task.get('minPlayerLevel', 'N/A')
+                        exp = task.get('experience', 0)
+                        result_text += f"• {task['name']} ({trader_name}, Lv.{min_level}, {exp} XP)\n"
+                    
+                    if len(used_in) > 5:
+                        result_text += f"• ... and {len(used_in) - 5} more\n"
+                
+                if received_from:
+                    result_text += f"\n**Received from Quests ({len(received_from)}):**\n"
+                    for task in received_from[:3]:  # Limit to 3
+                        trader_name = task.get('trader', {}).get('name', 'Unknown')
+                        result_text += f"• {task['name']} ({trader_name})\n"
+                    
+                    if len(received_from) > 3:
+                        result_text += f"• ... and {len(received_from) - 3} more\n"
+                
+                # Links
+                if item.get('wikiLink'):
+                    result_text += f"\n**Wiki:** {item['wikiLink']}\n"
+                
+                result_text += "\n---\n\n"
+            
+            return [TextContent(type="text", text=result_text)]
+            
+        except Exception as e:
+            logger.error(f"Error getting quest items: {e}")
+            return [TextContent(
+                type="text",
+                text=f"Error getting quest items: {str(e)}"
             )]

@@ -1,14 +1,15 @@
 """Tests for MCP tools."""
-                                                                                                                                                              
-import pytest                                                                                                                                                 
-from unittest.mock import AsyncMock, patch                                                                                                                    
-from mcp.types import TextContent                                                                                                                             
-                                                                                                                                                              
-from src.tools.items import ItemTools                                                                                                                         
-from src.tools.market import MarketTools
-from src.tools.maps import MapTools
-from src.tools.traders import TraderTools
-from src.tools.quests import QuestTools                                                                                                                      
+
+import pytest
+from unittest.mock import AsyncMock, patch
+from mcp.types import TextContent
+
+from tarkov_mcp.tools.items import ItemTools
+from tarkov_mcp.tools.market import MarketTools
+from tarkov_mcp.tools.maps import MapTools
+from tarkov_mcp.tools.traders import TraderTools
+from tarkov_mcp.tools.quests import QuestTools
+from tarkov_mcp.tools.community import CommunityTools                                                                                                                      
                                                                                                                                                               
 # Set timeout for all async tests to prevent hanging                                                                                                          
 pytestmark = pytest.mark.timeout(30)     
@@ -43,12 +44,14 @@ class TestItemTools:
     @pytest.mark.asyncio
     async def test_search_items_success(self, item_tools, mock_search_response):
         """Test successful item search."""
-        with patch('src.tools.items.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.search_items.return_value = mock_search_response
             mock_client_class.return_value.__aenter__.return_value = mock_client
             
             result = await item_tools.handle_search_items({"name": "AK", "limit": 10})
+            
+            mock_client.search_items.assert_called_once_with(name="AK", item_type=None, limit=10, lang="en")
             
             assert len(result) == 1
             assert isinstance(result[0], TextContent)
@@ -59,7 +62,7 @@ class TestItemTools:
     @pytest.mark.asyncio
     async def test_search_items_no_results(self, item_tools):
         """Test item search with no results."""
-        with patch('src.tools.items.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.search_items.return_value = []
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -97,15 +100,16 @@ class TestItemTools:
             "changeLast48hPercent": 8.7,
             "types": ["weapon", "assault-rifle"],
             "sellFor": [
-                {"source": "Prapor", "priceRUB": 15000}
+                {"vendor": {"name": "Prapor"}, "priceRUB": 15000}
             ],
             "buyFor": [
-                {"source": "Flea Market", "priceRUB": 25000}
+                {"vendor": {"name": "Flea Market"}, "priceRUB": 25000}
             ],
-            "wikiLink": "https://escapefromtarkov.fandom.com/wiki/AK-74"
+            "wikiLink": "https://escapefromtarkov.fandom.com/wiki/AK-74",
+            "properties": None
         }
         
-        with patch('src.tools.items.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_item_by_id.return_value = mock_item
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -124,7 +128,7 @@ class TestItemTools:
     @pytest.mark.asyncio
     async def test_get_item_details_not_found(self, item_tools):
         """Test item details for non-existent item."""
-        with patch('src.tools.items.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_item_by_id.return_value = None
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -169,7 +173,7 @@ class TestMarketTools:
     @pytest.mark.asyncio
     async def test_get_flea_market_data_success(self, market_tools, mock_flea_data):
         """Test successful flea market data retrieval."""
-        with patch('src.tools.market.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.market.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_flea_market_data.return_value = mock_flea_data
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -208,7 +212,7 @@ class TestMarketTools:
             }
         ]
         
-        with patch('src.tools.market.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.market.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_barters.return_value = mock_barters
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -248,7 +252,7 @@ class TestMarketTools:
             }
         ]
         
-        with patch('src.tools.market.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.market.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_barters.return_value = mock_barters
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -267,7 +271,7 @@ class TestMarketTools:
     @pytest.mark.asyncio
     async def test_calculate_barter_profit_not_found(self, market_tools):
         """Test barter profit calculation for non-existent barter."""
-        with patch('src.tools.market.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.market.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client.get_barters.return_value = []
             mock_client_class.return_value.__aenter__.return_value = mock_client
@@ -297,7 +301,7 @@ class TestMarketTools:
             }
         ]
         
-        with patch('src.tools.market.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.market.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_ammo_data.return_value = mock_ammo_data
@@ -314,18 +318,24 @@ class TestMarketTools:
         """Test get_hideout_modules with successful response."""
         mock_modules = [
             {
+                "id": "workbench",
                 "name": "Workbench",
-                "level": 1,
-                "require": [
-                    {"item": {"name": "Screws"}, "count": 5}
-                ],
-                "bonuses": [
-                    {"type": "CraftingSpeed", "value": 10}
+                "normalizedName": "workbench",
+                "levels": [
+                    {
+                        "level": 1,
+                        "itemRequirements": [
+                            {"item": {"name": "Screws"}, "count": 5}
+                        ],
+                        "bonuses": [
+                            {"type": "CraftingSpeed", "value": 10}
+                        ]
+                    }
                 ]
             }
         ]
         
-        with patch('src.tools.market.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.market.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_hideout_modules.return_value = mock_modules
@@ -358,7 +368,7 @@ class TestItemToolsExtended:
             }
         ]
         
-        with patch('src.tools.items.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.search_items.return_value = mock_items
@@ -394,7 +404,7 @@ class TestItemToolsExtended:
             }
         ]
         
-        with patch('src.tools.items.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_item_by_id.side_effect = mock_items
@@ -414,6 +424,90 @@ class TestItemToolsExtended:
         
         assert len(result) == 1
         assert "At least 2 item IDs are required" in result[0].text
+    
+    @pytest.mark.asyncio
+    async def test_search_items_with_language(self, item_tools):
+        """Test item search with language parameter."""
+        mock_search_response = [
+            {
+                "id": "ak74-id",
+                "name": "AK-74",
+                "shortName": "AK74",
+                "avg24hPrice": 25000,
+                "types": ["weapon", "assault-rifle"]
+            }
+        ]
+        
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.search_items.return_value = mock_search_response
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            
+            result = await item_tools.handle_search_items({"name": "AK", "language": "ru", "limit": 10})
+            
+            mock_client.search_items.assert_called_once_with(name="AK", item_type=None, limit=10, lang="ru")
+            assert len(result) == 1
+            assert "AK-74" in result[0].text
+    
+    @pytest.mark.asyncio
+    async def test_get_quest_items_success(self, item_tools):
+        """Test successful quest items retrieval."""
+        mock_quest_items = [
+            {
+                "id": "quest-item-1",
+                "name": "Factory exit key",
+                "shortName": "Factory key",
+                "description": "A key to the factory exit",
+                "width": 1,
+                "height": 1,
+                "basePrice": 50000,
+                "usedInTasks": [
+                    {
+                        "id": "task1",
+                        "name": "Debut",
+                        "trader": {"name": "Prapor"},
+                        "minPlayerLevel": 1,
+                        "experience": 1000
+                    }
+                ],
+                "receivedFromTasks": [
+                    {
+                        "id": "task2", 
+                        "name": "Checking",
+                        "trader": {"name": "Prapor"}
+                    }
+                ]
+            }
+        ]
+        
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.get_quest_items.return_value = mock_quest_items
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            
+            result = await item_tools.handle_get_quest_items({"limit": 50})
+            
+            assert len(result) == 1
+            assert isinstance(result[0], TextContent)
+            text = result[0].text
+            assert "Factory exit key" in text
+            assert "Used in Quests (1)" in text
+            assert "Received from Quests (1)" in text
+            assert "Debut" in text
+            assert "Prapor" in text
+    
+    @pytest.mark.asyncio
+    async def test_get_quest_items_no_results(self, item_tools):
+        """Test quest items with no results."""
+        with patch('tarkov_mcp.tools.items.TarkovGraphQLClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.get_quest_items.return_value = []
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            
+            result = await item_tools.handle_get_quest_items({"limit": 50})
+            
+            assert len(result) == 1
+            assert "No quest items found" in result[0].text
 
 
 class TestMapTools:
@@ -449,7 +543,7 @@ class TestMapTools:
     @pytest.mark.asyncio
     async def test_get_maps_success(self, map_tools, mock_maps_data):
         """Test get_maps with successful response."""
-        with patch('src.tools.maps.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.maps.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_maps.return_value = mock_maps_data
@@ -483,7 +577,7 @@ class TestMapTools:
             ]
         }
         
-        with patch('src.tools.maps.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.maps.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_map_by_name.return_value = mock_map_data
@@ -498,7 +592,7 @@ class TestMapTools:
     @pytest.mark.asyncio
     async def test_get_map_details_not_found(self, map_tools):
         """Test get_map_details with non-existent map."""
-        with patch('src.tools.maps.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.maps.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_map_by_name.return_value = None
@@ -530,7 +624,7 @@ class TestMapTools:
             ]
         }
         
-        with patch('src.tools.maps.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.maps.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_map_by_name.return_value = mock_map_data
@@ -555,25 +649,27 @@ class TestTraderTools:
         """Mock traders data for testing."""
         return [
             {
+                "id": "prapor",
                 "name": "Prapor",
                 "description": "Military equipment dealer",
                 "location": "Tarkov",
                 "resetTime": 3,
-                "currency": [{"name": "RUB"}]
+                "currency": {"id": "rub", "name": "RUB"}
             },
             {
+                "id": "therapist",
                 "name": "Therapist",
                 "description": "Medical supplies",
                 "location": "Tarkov",
                 "resetTime": 3,
-                "currency": [{"name": "RUB"}, {"name": "USD"}]
+                "currency": {"id": "rub", "name": "RUB"}
             }
         ]
     
     @pytest.mark.asyncio
     async def test_get_traders_success(self, trader_tools, mock_traders_data):
         """Test get_traders with successful response."""
-        with patch('src.tools.traders.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.traders.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_traders.return_value = mock_traders_data
@@ -589,11 +685,12 @@ class TestTraderTools:
     async def test_get_trader_details_success(self, trader_tools):
         """Test get_trader_details with successful response."""
         mock_trader_data = {
+            "id": "prapor",
             "name": "Prapor",
             "description": "Military equipment dealer",
             "location": "Tarkov",
             "resetTime": 3,
-            "currency": [{"name": "RUB"}],
+            "currency": {"id": "rub", "name": "RUB"},
             "levels": [
                 {
                     "level": 1,
@@ -609,7 +706,7 @@ class TestTraderTools:
             }
         }
         
-        with patch('src.tools.traders.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.traders.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_trader_by_name.return_value = mock_trader_data
@@ -636,7 +733,7 @@ class TestTraderTools:
             }
         ]
         
-        with patch('src.tools.traders.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.traders.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_trader_items.return_value = mock_items
@@ -650,7 +747,7 @@ class TestTraderTools:
     @pytest.mark.asyncio
     async def test_get_trader_details_not_found(self, trader_tools):
         """Test get_trader_details with non-existent trader."""
-        with patch('src.tools.traders.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.traders.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_trader_by_name.return_value = None
@@ -696,7 +793,7 @@ class TestQuestTools:
     @pytest.mark.asyncio
     async def test_get_quests_success(self, quest_tools, mock_quests_data):
         """Test get_quests with successful response."""
-        with patch('src.tools.quests.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.quests.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_quests.return_value = mock_quests_data
@@ -731,7 +828,7 @@ class TestQuestTools:
             }
         }
         
-        with patch('src.tools.quests.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.quests.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_quest_by_id.return_value = mock_quest_data
@@ -757,7 +854,7 @@ class TestQuestTools:
             }
         ]
         
-        with patch('src.tools.quests.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.quests.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.search_quests.return_value = mock_search_results
@@ -771,7 +868,7 @@ class TestQuestTools:
     @pytest.mark.asyncio
     async def test_search_quests_no_results(self, quest_tools):
         """Test search_quests with no results."""
-        with patch('src.tools.quests.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.quests.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.search_quests.return_value = []
@@ -784,7 +881,7 @@ class TestQuestTools:
     @pytest.mark.asyncio
     async def test_get_quest_details_not_found(self, quest_tools):
         """Test get_quest_details with non-existent quest."""
-        with patch('src.tools.quests.TarkovGraphQLClient') as mock_client_class:
+        with patch('tarkov_mcp.tools.quests.TarkovGraphQLClient') as mock_client_class:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
             mock_client.get_quest_by_id.return_value = None
@@ -793,3 +890,80 @@ class TestQuestTools:
             
             assert len(result) == 1
             assert "No quest found" in result[0].text
+
+
+class TestCommunityTools:
+    """Test community tools functionality."""
+    
+    @pytest.fixture
+    def community_tools(self):
+        """Create CommunityTools instance for testing."""
+        return CommunityTools()
+    
+    @pytest.fixture
+    def mock_goon_reports(self):
+        """Mock goon reports data for testing."""
+        return [
+            {
+                "id": "report-1",
+                "map": {"name": "Customs"},
+                "timestamp": "2024-01-15T10:30:00Z",
+                "location": "Gas Station",
+                "spottedBy": "Player123",
+                "verified": True
+            },
+            {
+                "id": "report-2",
+                "map": {"name": "Woods"},
+                "timestamp": "2024-01-15T09:45:00Z",
+                "location": "Sawmill",
+                "spottedBy": "TestUser",
+                "verified": False
+            }
+        ]
+    
+    @pytest.mark.asyncio
+    async def test_get_goon_reports_success(self, community_tools, mock_goon_reports):
+        """Test successful goon reports retrieval."""
+        with patch('tarkov_mcp.tools.community.TarkovGraphQLClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.get_goon_reports.return_value = mock_goon_reports
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            
+            result = await community_tools.handle_get_goon_reports({"limit": 10})
+            
+            assert len(result) == 1
+            assert isinstance(result[0], TextContent)
+            text = result[0].text
+            assert "Recent Goon Squad Reports (2 reports)" in text
+            assert "✅ Customs - Gas Station" in text
+            assert "⚠️ Woods - Sawmill" in text
+            assert "Player123" in text
+            assert "Verified" in text
+            assert "Unverified" in text
+    
+    @pytest.mark.asyncio
+    async def test_get_goon_reports_no_results(self, community_tools):
+        """Test goon reports with no results."""
+        with patch('tarkov_mcp.tools.community.TarkovGraphQLClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.get_goon_reports.return_value = []
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            
+            result = await community_tools.handle_get_goon_reports({"limit": 10})
+            
+            assert len(result) == 1
+            assert "No goon squad reports found" in result[0].text
+    
+    @pytest.mark.asyncio
+    async def test_get_goon_reports_error_handling(self, community_tools):
+        """Test goon reports error handling."""
+        with patch('tarkov_mcp.tools.community.TarkovGraphQLClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.get_goon_reports.side_effect = Exception("Network error")
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            
+            result = await community_tools.handle_get_goon_reports({"limit": 10})
+            
+            assert len(result) == 1
+            assert "Error getting goon reports" in result[0].text

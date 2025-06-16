@@ -9,10 +9,11 @@ A Model Context Protocol (MCP) server that provides access to Escape from Tarkov
 
 ### Item Tools
 
-- **search_items** - Search for items by name or type
+- **search_items** - Search for items by name or type (supports localization)
 - **get_item_details** - Get detailed item information including prices, stats, and usage
 - **get_item_prices** - Get current pricing information for items
 - **compare_items** - Compare multiple items side by side
+- **get_quest_items** - Get quest-specific items with their associated tasks
 
 ### Market Tools
 
@@ -39,6 +40,10 @@ A Model Context Protocol (MCP) server that provides access to Escape from Tarkov
 - **get_quests** - List quests, optionally filtered by trader
 - **get_quest_details** - Detailed quest information including objectives and rewards
 - **search_quests** - Search quests by name or description
+
+### Community Tools
+
+- **get_goon_reports** - Get recent community-driven goon squad sighting reports
 
 ## Installation
 
@@ -120,6 +125,10 @@ The server can be configured using environment variables:
 
 ## Features
 
+- **Multi-language Support**: Full localization support for 16 languages (English, Russian, German, French, Spanish, etc.)
+- **Enhanced Item Data**: Comprehensive item properties including new weapon ballistics, armor materials, and medical effects
+- **Community Integration**: Goon squad tracking and quest-specific item information
+- **Modern API Compatibility**: Updated GraphQL queries using latest Tarkov API schema structure
 - **Rate Limiting**: Built-in rate limiting to respect API limits (60 requests per minute by default)
 - **Error Handling**: Comprehensive error handling with detailed error messages
 - **Async Support**: Fully asynchronous implementation for better performance
