@@ -4,10 +4,7 @@ import asyncio
 import logging
 from typing import Any, Sequence
 from mcp.server import Server
-from mcp.types import (
-    Resource, Tool, TextContent, ImageContent, EmbeddedResource,
-    LoggingLevel
-)
+from mcp.types import Tool, TextContent
 import mcp.server.stdio
 import mcp.types as types
 

@@ -1,8 +1,6 @@
 """Configuration settings for the Tarkov MCP server."""
 
 import os
-import logging
-from typing import Optional
 
 class Config:
     """Configuration class for Tarkov MCP server."""
